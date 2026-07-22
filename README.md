@@ -1,37 +1,37 @@
 # SnapDoc
 
-<!-- TODO: reemplaza TU_USUARIO con tu usuario u organización de GitHub -->
-[![CI](https://github.com/TU_USUARIO/SnapDoc/actions/workflows/ci.yml/badge.svg)](https://github.com/TU_USUARIO/SnapDoc/actions/workflows/ci.yml)
-[![Release](https://github.com/TU_USUARIO/SnapDoc/actions/workflows/release.yml/badge.svg)](https://github.com/TU_USUARIO/SnapDoc/actions/workflows/release.yml)
+[![CI](https://github.com/hacybeyker/SnapDoc/actions/workflows/ci.yml/badge.svg)](https://github.com/hacybeyker/SnapDoc/actions/workflows/ci.yml)
+[![Release](https://github.com/hacybeyker/SnapDoc/actions/workflows/release.yml/badge.svg)](https://github.com/hacybeyker/SnapDoc/actions/workflows/release.yml)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.0-7F52FF?logo=kotlin&logoColor=white)
 ![Compose](https://img.shields.io/badge/Jetpack_Compose-BOM_2026.06-4285F4?logo=jetpackcompose&logoColor=white)
 ![Android](https://img.shields.io/badge/Android-minSdk_26-3DDC84?logo=android&logoColor=white)
 
-> <!-- TODO: escribe aquí una descripción breve de tu proyecto -->
-> *Descripción del proyecto*
+> Document scanner that **understands** what it scans, without sending anything to the cloud. Detects edges,
+> corrects perspective and extracts text (OCR) with **CameraX + ML Kit**, then classifies/summarizes each
+> document with **on-device generative AI (Gemini Nano via ML Kit GenAI)** — zero data leaves the device.
 
 ---
 
-## 📁 Estructura
+## 📁 Structure
 
 ```
 .
 ├── app/src/main/java/com/hacybeyker/snapdoc/
-│   ├── core/              # Compartido (design tokens en core/ui/theme/)
+│   ├── core/              # Shared code (design tokens in core/ui/theme/)
 │   ├── navigation/        # NavKeys + AppNavHost (Navigation 3)
 │   └── feature/<name>/    # Vertical Slices: domain / data / ui
-├── AGENTS.md              # Fuente de verdad para agentes de IA
-├── .agents/               # Skills e infraestructura de IA
+├── AGENTS.md              # Source of truth for AI agents
+├── .agents/               # AI skills & infrastructure
 └── gradle/
-    └── libs.versions.toml # Catálogo centralizado de versiones
+    └── libs.versions.toml # Centralized version catalog
 ```
 
 ---
 
-## ⚡ Ejecutar
+## ⚡ Run
 
 ```bash
-./gradlew assembleDebug    # o Run desde Android Studio
+./gradlew assembleDebug    # or Run from Android Studio
 ```
 
 ---
@@ -39,24 +39,24 @@
 ## 🧪 Tests
 
 ```bash
-./gradlew test    # Tests unitarios (JVM — sin emulador)
+./gradlew test    # Unit tests (JVM — no emulator)
 ```
 
 ---
 
-## 🎨 Calidad de código
+## 🎨 Code quality
 
-ktlint + detekt + Android Lint están preconfigurados. Reglas en `.editorconfig`, `config/detekt/detekt.yml` y `lint.xml`.
+ktlint + detekt + Android Lint are preconfigured. Rules in `.editorconfig`, `config/detekt/detekt.yml` and `lint.xml`.
 
 ```bash
-# Antes de cada commit: formatea y verifica todo
+# Before every commit: format and verify everything
 ./gradlew formatAndAnalyze
 
-# Solo verificación (CI / pre-push)
+# Verification only (CI / pre-push)
 ./gradlew codeQuality
 ```
 
-El proyecto incluye un **pre-commit hook** que ejecuta `formatAndAnalyze` automáticamente antes de cada commit. Instálalo una sola vez tras clonar:
+The project includes a **pre-commit hook** that runs `formatAndAnalyze` automatically before every commit. Install it once after cloning:
 
 ```bash
 chmod +x scripts/setup-quality-hook.sh && ./scripts/setup-quality-hook.sh
@@ -64,18 +64,18 @@ chmod +x scripts/setup-quality-hook.sh && ./scripts/setup-quality-hook.sh
 
 ---
 
-## 🤖 Desarrollo con IA
+## 🤖 AI-assisted development
 
-Este proyecto incluye infraestructura para agentes de IA (Claude Code, Copilot, Cursor, Junie, Antigravity…).
+This project ships with infrastructure for AI agents (Claude Code, Copilot, Cursor, Junie, Antigravity…).
 
-Comienza diciéndole a tu agente:
+Start by telling your agent:
 
-> *"Lee AGENTS.md y ayúdame a implementar mi primera feature."*
+> *"Read AGENTS.md and help me implement my first feature."*
 
-El agente encontrará las reglas de arquitectura (Vertical Slice + Clean + MVI), el estándar de código y la guía de testing en `.agents/skills/`.
+The agent will find the architecture rules (Vertical Slice + Clean + MVI), the coding standard and the testing guide in `.agents/skills/`.
 
 ---
 
 ## 📄 Changelog
 
-Ver [CHANGELOG.md](./CHANGELOG.md) para el historial de cambios.
+See [CHANGELOG.md](./CHANGELOG.md) for the change history.

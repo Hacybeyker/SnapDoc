@@ -1,6 +1,6 @@
 #!/bin/bash
-# Instala el pre-commit hook de calidad de código.
-# Ejecutar una sola vez tras clonar el repositorio:
+# Installs the code-quality pre-commit hook.
+# Run once after cloning the repository:
 #   chmod +x scripts/setup-quality-hook.sh && ./scripts/setup-quality-hook.sh
 
 set -e
@@ -17,11 +17,11 @@ FORMAT_EXIT=$?
 FORMATTED=$(git diff --name-only)
 if [ -n "$FORMATTED" ]; then
     echo "$FORMATTED" | xargs git add
-    echo "ℹ️  formatAndAnalyze corrigió el formato — el commit incluye los archivos corregidos."
+    echo "ℹ️  formatAndAnalyze fixed the formatting — the commit includes the corrected files."
 fi
 
 if [ $FORMAT_EXIT -ne 0 ]; then
-    echo "❌ Commit bloqueado — hay errores que no se pueden auto-corregir. Revisa la salida anterior."
+    echo "❌ Commit blocked — there are errors that can't be auto-fixed. Check the output above."
     exit 1
 fi
 
@@ -29,4 +29,4 @@ exit 0
 EOF
 
 chmod +x "$HOOK_FILE"
-echo "✅ pre-commit hook instalado en $HOOK_FILE"
+echo "✅ pre-commit hook installed at $HOOK_FILE"

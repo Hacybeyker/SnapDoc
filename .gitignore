@@ -18,7 +18,7 @@ local.properties
 # Kotlin
 .kotlin/
 
-# Reportes de la skill feature-implementation
+# Reports from the feature-implementation skill
 reports/
 
 # Claude Code local settings

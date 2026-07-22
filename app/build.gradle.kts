@@ -85,8 +85,8 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
 
-// El scaffolding limpia los tests de ejemplo al inicializar; sin esto, Gradle falla
-// cuando el source set de test existe (MainDispatcherRule) pero aún no hay @Test.
+// The scaffolding removes the sample tests on init; without this, Gradle fails
+// when the test source set exists (MainDispatcherRule) but there's no @Test yet.
 tasks.withType<Test>().configureEach {
     failOnNoDiscoveredTests = false
 }

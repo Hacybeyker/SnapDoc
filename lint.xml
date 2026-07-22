@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Configuracion de Android Lint.
+  Android Lint configuration.
   https://developer.android.com/studio/write/lint
-  Ajusta la severidad por issue: ignore | information | warning | error | fatal
+  Adjusts severity per issue: ignore | information | warning | error | fatal
 -->
 <lint>
-    <!-- No abortar el build por deprecaciones; revisarlas como warning. -->
+    <!-- Don't abort the build on deprecations; flag them as a warning instead. -->
     <issue id="Deprecation" severity="warning" />
     <issue id="GradleDependency" severity="warning" />
     <issue id="OldTargetApi" severity="warning" />
 
-    <!-- Recomendaciones de calidad como error en codigo propio. -->
+    <!-- Quality recommendations as an error in our own code. -->
     <issue id="VisibleForTests" severity="error" />
 
-    <!-- Ruido habitual que se puede silenciar. -->
+    <!-- Common noise that can be silenced. -->
     <issue id="UnusedResources" severity="warning" />
 
-    <!-- Excluir codigo generado/recursos de test. -->
+    <!-- Exclude generated code/test resources. -->
     <issue id="all">
         <ignore path="**/build/**" />
     </issue>

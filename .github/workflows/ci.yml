@@ -1,6 +1,6 @@
-# CI — Calidad + Build/Tests Android
-# Genérico: usa las tareas agregadas del módulo app (codeQuality, formatAndAnalyze)
-# y no depende del nombre del proyecto ni del package.
+# CI — Quality + Android Build/Tests
+# Generic: uses the app module's aggregated tasks (codeQuality, formatAndAnalyze)
+# and doesn't depend on the project name or package.
 name: CI
 
 on:
@@ -16,10 +16,10 @@ concurrency:
 permissions:
   contents: read
 
-# Estrategia de jobs:
+# Job strategy:
 #   quality ──> android
-# `quality` actúa como gate: es el job más rápido y barato. Si falla,
-# no se gasta cómputo en el build/tests.
+# `quality` acts as a gate: it's the fastest, cheapest job. If it fails,
+# no compute is spent on the build/tests.
 jobs:
   quality:
     name: Code Quality (ktlint + detekt + Lint)
@@ -38,7 +38,7 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Set up Gradle (con cache)
+      - name: Set up Gradle (with cache)
         uses: gradle/actions/setup-gradle@v6
 
       - name: Run quality checks
@@ -70,7 +70,7 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Set up Gradle (con cache)
+      - name: Set up Gradle (with cache)
         uses: gradle/actions/setup-gradle@v6
 
       - name: Unit tests (JVM)

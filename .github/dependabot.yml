@@ -1,4 +1,4 @@
-# Mantiene actualizadas las dependencias de Gradle y las GitHub Actions.
+# Keeps Gradle dependencies and GitHub Actions up to date.
 version: 2
 updates:
   - package-ecosystem: gradle

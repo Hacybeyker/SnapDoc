@@ -1,14 +1,14 @@
-# Release — se dispara al pushear un tag v* (ej. v1.0.0)
-# Genera el APK y el AAB de release (SIN firmar) y crea un GitHub Release
-# con los artefactos adjuntos y notas generadas automáticamente.
+# Release — triggered by pushing a v* tag (e.g. v1.0.0)
+# Builds the release APK and AAB (UNSIGNED) and creates a GitHub Release
+# with the artifacts attached and auto-generated notes.
 #
-# ── Para publicar builds FIRMADOS ────────────────────────────────────────────
-# 1. Agrega los secrets del repo: KEYSTORE_BASE64, KEYSTORE_PASSWORD,
-#    KEY_ALIAS y KEY_PASSWORD.
-# 2. Decodifica el keystore antes del build:
+# ── To publish SIGNED builds ─────────────────────────────────────────────────
+# 1. Add the repo secrets: KEYSTORE_BASE64, KEYSTORE_PASSWORD,
+#    KEY_ALIAS and KEY_PASSWORD.
+# 2. Decode the keystore before the build:
 #      - run: echo "$KEYSTORE_BASE64" | base64 -d > keystore.jks
-# 3. Configura signingConfigs en app/build.gradle.kts leyendo esas
-#    variables de entorno.
+# 3. Configure signingConfigs in app/build.gradle.kts reading those
+#    environment variables.
 name: Release
 
 on:
@@ -33,7 +33,7 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Set up Gradle (con cache)
+      - name: Set up Gradle (with cache)
         uses: gradle/actions/setup-gradle@v6
 
       - name: Quality gate
@@ -42,7 +42,7 @@ jobs:
       - name: Unit tests
         run: ./gradlew test
 
-      - name: Build release APK + AAB (sin firmar)
+      - name: Build release APK + AAB (unsigned)
         run: ./gradlew assembleRelease bundleRelease
 
       - name: Create GitHub Release

@@ -1,25 +1,25 @@
 # AGENTS.md — SnapDoc
 
-> Este archivo sigue el estándar [agents.md](https://agents.md/) y es la **Fuente de Verdad** para agentes de IA en este proyecto **Android nativo con Jetpack Compose**.
+> This file follows the [agents.md](https://agents.md/) standard and is the **Source of Truth** for AI agents working on this **native Android + Jetpack Compose** project.
 
 ---
 
 ## 🛠️ Tech Stack & Source of Truth
 
 > [!IMPORTANT]
-> No asumas versiones. Consulta **SIEMPRE** `gradle/libs.versions.toml` para dependencias y versiones de plugins.
+> Do not assume versions. **ALWAYS** check `gradle/libs.versions.toml` for dependency and plugin versions.
 
-| Categoría | Estándar |
+| Category | Standard |
 |-----------|----------|
 | **UI** | Jetpack Compose + Material Design 3 |
-| **Arquitectura** | Vertical Slice Architecture (feature-first) + regla de dependencia Clean + MVI |
-| **Navegación** | Navigation 3 con `NavKey` type-safe (`@Serializable`) |
-| **DI** | Hilt (módulo Hilt por feature, `@Binds` a interfaces de domain) |
-| **Persistencia Local** | Room para datos estructurados + DataStore para preferencias (agregar al catálogo cuando se necesiten) |
-| **Concurrencia** | Kotlin Coroutines + Flow (`StateFlow` en ViewModels, dispatchers inyectados) |
-| **Testing** | JUnit + Turbine + Fakes (unitarios JVM) / Screenshot Testing (UI) |
-| **Principios** | SOLID + Patrones de Diseño (Repository, Factory, Observer, etc.) |
-| **Calidad** | ktlint + detekt + Android Lint |
+| **Architecture** | Vertical Slice Architecture (feature-first) + Clean dependency rule + MVI |
+| **Navigation** | Navigation 3 with type-safe `NavKey` (`@Serializable`) |
+| **DI** | Hilt (one Hilt module per feature, `@Binds` to domain interfaces) |
+| **Local persistence** | Room for structured data + DataStore for preferences (add to the catalog when needed) |
+| **Concurrency** | Kotlin Coroutines + Flow (`StateFlow` in ViewModels, injected dispatchers) |
+| **Testing** | JUnit + Turbine + Fakes (JVM unit tests) / Screenshot Testing (UI) |
+| **Principles** | SOLID + Design Patterns (Repository, Factory, Observer, etc.) |
+| **Quality** | ktlint + detekt + Android Lint |
 
 ---
 
@@ -27,88 +27,88 @@
 
 ```
 app/src/main/java/com/hacybeyker/snapdoc/
-├── core/                  # Compartido SOLO si ≥2 features lo necesitan (YAGNI)
+├── core/                  # Shared ONLY if ≥2 features need it (YAGNI)
 │   └── ui/theme/          #   design tokens (Color, Type, Shape, Spacing, Theme)
 ├── navigation/            # NavKeys @Serializable + AppNavHost (Navigation 3)
-└── feature/<name>/        # un Vertical Slice por capacidad de negocio
-    ├── domain/            #   modelos, usecases, interfaces de repos. Kotlin PURO.
-    ├── data/              #   sources + mappers + repos impl + módulo Hilt de la feature
-    └── ui/                #   Screen/Content Compose, ViewModel MVI, UiState/Intents
+└── feature/<name>/        # one Vertical Slice per business capability
+    ├── domain/            #   models, usecases, repo interfaces. PURE Kotlin.
+    ├── data/               #   sources + mappers + repo impls + feature's Hilt module
+    └── ui/                #   Screen/Content Compose, MVI ViewModel, UiState/Intents
 ```
 
-- **Package base**: `com.hacybeyker.snapdoc`
+- **Base package**: `com.hacybeyker.snapdoc`
 - **Build**: `./gradlew assembleDebug` · **Tests**: `./gradlew test`
-- **Calidad (obligatorio antes de commit)**: `./gradlew formatAndAnalyze` (ktlint + detekt + Android Lint)
+- **Quality (mandatory before commit)**: `./gradlew formatAndAnalyze` (ktlint + detekt + Android Lint)
 
 ---
 
 ## 🏗️ Project Architecture Rules
 
-### 1. Vertical Slice + Dependencias Unidireccionales
-Packaging **por feature**, nunca por capa técnica. Dentro de cada slice: `ui → domain ← data`.
-- **Domain**: Kotlin puro. Prohibido depender de frameworks (Android, Compose, Room, Hilt — solo `javax.inject`).
-- **ViewModels**: inyectar UseCases. **Prohibido** inyectar Repositorios directamente.
-- **Una feature nunca importa internals de otra feature**: colaboración vía `core/` o contratos de domain.
-- **Promueve a `core/` solo cuando ≥2 features lo necesitan** (YAGNI).
+### 1. Vertical Slice + Unidirectional Dependencies
+Package **by feature**, never by technical layer. Inside each slice: `ui → domain ← data`.
+- **Domain**: pure Kotlin. No dependency on frameworks allowed (Android, Compose, Room, Hilt — only `javax.inject`).
+- **ViewModels**: inject UseCases. **Forbidden** to inject Repositories directly.
+- **A feature never imports another feature's internals**: collaboration happens via `core/` or domain contracts.
+- **Promote to `core/` only when ≥2 features need it** (YAGNI).
 
 ### 2. State management (MVI)
-Cada pantalla es dirigida por un estado inmutable:
-- **UiState**: `sealed interface` con estados explícitos (`Loading / Empty / Content / Error`), expuesto como un único `StateFlow`.
-- **Intent**: `sealed interface` para acciones del usuario (entran por `onIntent()`).
-- La UI **reacciona** a los Flows (SSOT); no refresca a mano ni mantiene caches paralelos.
+Every screen is driven by an immutable state:
+- **UiState**: `sealed interface` with explicit states (`Loading / Empty / Content / Error`), exposed as a single `StateFlow`.
+- **Intent**: `sealed interface` for user actions (enter through `onIntent()`).
+- The UI **reacts** to the Flows (SSOT); it never refreshes manually or keeps parallel caches.
 
 ### 3. Coding Standards
-- **Composables**: PascalCase. Separar `Screen` (stateful) de `Content` (stateless). `@Preview` solo en Content.
-- **Strings**: prohibido hardcodear. Usar `stringResource(R.string.*)`.
-- **Estilos**: prohibido hardcodear colores/dp/sp en Composables. Usar los tokens de `core/ui/theme/` (`MaterialTheme.colorScheme/typography/shapes/spacing`).
-- **Imports**: prohibidos los wildcards (`import x.*`) y las trailing commas (ktlint lo aplica en el build).
-- **Dependencias**: siempre en `gradle/libs.versions.toml` con `version.ref`; solo versiones **estables**.
+- **Composables**: PascalCase. Separate `Screen` (stateful) from `Content` (stateless). `@Preview` only on Content.
+- **Strings**: hardcoding is forbidden. Use `stringResource(R.string.*)`.
+- **Styling**: hardcoding colors/dp/sp in Composables is forbidden. Use the tokens from `core/ui/theme/` (`MaterialTheme.colorScheme/typography/shapes/spacing`).
+- **Imports**: wildcard imports (`import x.*`) and trailing commas are forbidden (enforced by ktlint at build time).
+- **Dependencies**: always in `gradle/libs.versions.toml` with `version.ref`; **stable** versions only.
 
-### 4. SOLID & Patrones de Diseño
-- **SRP**: una clase, una responsabilidad (UseCases pequeños, un Mapper por transformación).
-- **DIP**: las capas superiores dependen de abstracciones (interfaces de Repository en domain, `@Binds` en data).
-- **OCP/ISP/LSP**: prefiere `sealed interface` y composición sobre herencia; repositorios pequeños por feature; los Fakes de test honran el contrato.
-- Aplica patrones donde aporten claridad (Repository, Factory, Strategy, Observer vía `Flow`), nunca por moda.
+### 4. SOLID & Design Patterns
+- **SRP**: one class, one responsibility (small UseCases, one Mapper per transformation).
+- **DIP**: upper layers depend on abstractions (Repository interfaces in domain, `@Binds` in data).
+- **OCP/ISP/LSP**: prefer `sealed interface` and composition over inheritance; small repositories per feature; test Fakes honor the contract.
+- Apply patterns where they add clarity (Repository, Factory, Strategy, Observer via `Flow`), never for fashion's sake.
 
 ---
 
 ## 🚀 AI Interaction Workflow
 
-Cualquier agente de IA que trabaje en este proyecto **DEBE** seguir estas guías maestras:
+Any AI agent working on this project **MUST** follow these master guides:
 
-1. **Arquitectura & Workflow**: [ARCHITECTURE_AND_WORKFLOW.md](.agents/skills/android-best-practices/references/ARCHITECTURE_AND_WORKFLOW.md)
-2. **Guía de UI & Styling**: [UI_AND_STYLING_GUIDE.md](.agents/skills/android-best-practices/references/UI_AND_STYLING_GUIDE.md)
-3. **Calidad & Testing**: [TESTING_STRATEGIES.md](.agents/skills/android-best-practices/references/TESTING_STRATEGIES.md)
-4. **Seguridad Móvil**: [MOBILE_SECURITY_GUIDE.md](.agents/skills/android-best-practices/references/MOBILE_SECURITY_GUIDE.md)
+1. **Architecture & Workflow**: [ARCHITECTURE_AND_WORKFLOW.md](.agents/skills/android-best-practices/references/ARCHITECTURE_AND_WORKFLOW.md)
+2. **UI & Styling Guide**: [UI_AND_STYLING_GUIDE.md](.agents/skills/android-best-practices/references/UI_AND_STYLING_GUIDE.md)
+3. **Quality & Testing**: [TESTING_STRATEGIES.md](.agents/skills/android-best-practices/references/TESTING_STRATEGIES.md)
+4. **Mobile Security**: [MOBILE_SECURITY_GUIDE.md](.agents/skills/android-best-practices/references/MOBILE_SECURITY_GUIDE.md)
 
-Para implementar una **feature / issue / bug / enhancement / fix / refactor** de punta a punta, sigue el workflow de la skill [feature-implementation](.agents/skills/feature-implementation/SKILL.md) (fases: contexto → snapshot → implementación → DoD → reporte).
+To implement a **feature / issue / bug / enhancement / fix / refactor** end to end, follow the [feature-implementation](.agents/skills/feature-implementation/SKILL.md) skill workflow (phases: context → snapshot → implementation → DoD → report).
 
-Para **revisar código implementado** (code review contra los estándares de este archivo), sigue el workflow de la skill [code-reviewer](.agents/skills/code-reviewer/SKILL.md) (fases: alcance → checklist → verificación automatizada → reporte por severidad).
-
----
-
-## 📝 Workflow por cambio (resumen)
-
-1. **Ubica la feature, no la capa** (capacidad nueva → `feature/<name>/` nuevo).
-2. **Domain primero**: model + usecase + interfaz, con tests unitarios.
-3. **Data del slice**: sources + mapper + repo impl + módulo Hilt.
-4. **UI del slice**: UiState/Intents + ViewModel + Screen/Content; registra el NavKey en `AppNavHost`.
-5. **Tests**: unitarios para la lógica nueva; screenshot test si hay UI visual relevante.
-6. **Verifica**: `./gradlew formatAndAnalyze` y `./gradlew test` en verde.
-7. **Documenta**: entrada en `CHANGELOG.md` bajo `[Unreleased]` (`Added/Fixed/Changed/Enhancement/Security`).
-
-**Commits — agrupa por unidad funcional, no por archivo.** Típicamente por capa (`domain` / `data` / `ui`) o sub-objetivo; cada commit compila y pasa calidad + tests. Una feature/fix a la vez.
+To **review implemented code** (code review against this file's standards), follow the [code-reviewer](.agents/skills/code-reviewer/SKILL.md) skill workflow (phases: scope → checklist → automated verification → severity report).
 
 ---
 
-## 🚫 Prohibiciones Críticas (Hard Rules)
-- ❌ **NO** omitas la capa de dominio (UseCases).
-- ❌ **NO** expongas Entities/DTOs fuera de la capa de datos (mapear siempre a Domain).
-- ❌ **NO** implementes lógica de negocio en Composables.
-- ❌ **NO** uses `@Preview` en funciones de Screen (solo en Content con fakes).
-- ❌ **NO** uses `fallbackToDestructiveMigration` en código real (migraciones Room versionadas).
-- ❌ **NO** hardcodees secretos (API keys, tokens, passwords) ni guardes credenciales en texto plano. Ver [Guía de Seguridad](.agents/skills/android-best-practices/references/MOBILE_SECURITY_GUIDE.md).
-- ❌ **NO** agregues dependencias `alpha/beta/rc/snapshot` al catálogo.
+## 📝 Workflow per change (summary)
+
+1. **Locate the feature, not the layer** (new capability → new `feature/<name>/`).
+2. **Domain first**: model + usecase + interface, with unit tests.
+3. **Slice data layer**: sources + mapper + repo impl + Hilt module.
+4. **Slice UI layer**: UiState/Intents + ViewModel + Screen/Content; register the NavKey in `AppNavHost`.
+5. **Tests**: unit tests for new logic; screenshot test if there's relevant visual UI.
+6. **Verify**: `./gradlew formatAndAnalyze` and `./gradlew test` passing.
+7. **Document**: entry in `CHANGELOG.md` under `[Unreleased]` (`Added/Fixed/Changed/Enhancement/Security`).
+
+**Commits — group by functional unit, not by file.** Typically by layer (`domain` / `data` / `ui`) or sub-goal; each commit builds and passes quality checks + tests. One feature/fix at a time.
+
+---
+
+## 🚫 Critical Prohibitions (Hard Rules)
+- ❌ **DO NOT** skip the domain layer (UseCases).
+- ❌ **DO NOT** expose Entities/DTOs outside the data layer (always map to Domain).
+- ❌ **DO NOT** implement business logic in Composables.
+- ❌ **DO NOT** use `@Preview` on Screen functions (only on Content with fakes).
+- ❌ **DO NOT** use `fallbackToDestructiveMigration` in production code (versioned Room migrations).
+- ❌ **DO NOT** hardcode secrets (API keys, tokens, passwords) or store credentials in plain text. See the [Security Guide](.agents/skills/android-best-practices/references/MOBILE_SECURITY_GUIDE.md).
+- ❌ **DO NOT** add `alpha/beta/rc/snapshot` dependencies to the catalog.
 
 ---
 **Standard Android Config** — SnapDoc
