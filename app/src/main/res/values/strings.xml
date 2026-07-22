@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">ScaffoldingAndroidCompose</string>
+    <string name="home_greeting">Hello, %1$s!</string>
+    <string name="home_name_label">Your name</string>
+    <string name="home_submit">Greet</string>
+</resources>
