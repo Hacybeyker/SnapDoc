@@ -1,4 +1,4 @@
-# AGENTS.md — {{PROJECT_NAME}}
+# AGENTS.md — SnapDoc
 
 > Este archivo sigue el estándar [agents.md](https://agents.md/) y es la **Fuente de Verdad** para agentes de IA en este proyecto **Android nativo con Jetpack Compose**.
 
@@ -26,7 +26,7 @@
 ## 📁 Project Layout
 
 ```
-{{MODULE_NAME}}/src/main/java/{{PACKAGE_PATH}}/
+app/src/main/java/com/hacybeyker/snapdoc/
 ├── core/                  # Compartido SOLO si ≥2 features lo necesitan (YAGNI)
 │   └── ui/theme/          #   design tokens (Color, Type, Shape, Spacing, Theme)
 ├── navigation/            # NavKeys @Serializable + AppNavHost (Navigation 3)
@@ -36,7 +36,7 @@
     └── ui/                #   Screen/Content Compose, ViewModel MVI, UiState/Intents
 ```
 
-- **Package base**: `{{PACKAGE_NAME}}`
+- **Package base**: `com.hacybeyker.snapdoc`
 - **Build**: `./gradlew assembleDebug` · **Tests**: `./gradlew test`
 - **Calidad (obligatorio antes de commit)**: `./gradlew formatAndAnalyze` (ktlint + detekt + Android Lint)
 
@@ -111,4 +111,4 @@ Para **revisar código implementado** (code review contra los estándares de est
 - ❌ **NO** agregues dependencias `alpha/beta/rc/snapshot` al catálogo.
 
 ---
-**Standard Android Config** — {{PROJECT_NAME}}
+**Standard Android Config** — SnapDoc

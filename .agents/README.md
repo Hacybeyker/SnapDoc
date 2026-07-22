@@ -1,4 +1,4 @@
-# 🤖 AI Agent Infrastructure — {{PROJECT_NAME}}
+# 🤖 AI Agent Infrastructure — SnapDoc
 
 > **Configuración universal siguiendo el estándar de [Agent Skills](https://agentskills.io/home)**
 
@@ -26,7 +26,7 @@ Este directorio es el sistema operativo de cualquier IA que trabaje en este proy
 Para evitar la fragmentación entre IDEs (VS Code, Android Studio, Claude Code), utilizamos **Symlinks**.
 
 ```
-{{PROJECT_ROOT}}/
+SnapDoc/
 ├── .agents/skills/           # ✨ FUENTE DE VERDAD (Originales)
 ├── .github/copilot/skills/   # → (Symlink) para VS Code / Copilot
 ├── .jetbrains/agent/skills/  # → (Symlink) para Android Studio / IntelliJ
@@ -48,7 +48,7 @@ Para evitar la fragmentación entre IDEs (VS Code, Android Studio, Claude Code),
    ```bash
    ./init-project.sh
    ```
-   El script renombra el proyecto y el package, reemplaza los placeholders (`{{PROJECT_NAME}}`, `{{PACKAGE_NAME}}`, `{{MODULE_NAME}}`) y crea los symlinks automáticamente. Guía completa en `SETUP.md`.
+   El script renombra el proyecto y el package, reemplaza los placeholders (`SnapDoc`, `com.hacybeyker.snapdoc`, `app`) y crea los symlinks automáticamente. Guía completa en `SETUP.md`.
 2. **Solo quieres la infraestructura de IA en un proyecto existente**: copia `.agents/` y `AGENTS.md`, actualiza los placeholders manualmente y ejecuta `./.agents/scripts/sync-skills.sh`.
 3. **Validación**: Antes de cada commit, pide a la IA ejecutar `./gradlew formatAndAnalyze` (ktlint + detekt + Android Lint, ya configurados en este scaffolding).
 
@@ -59,4 +59,4 @@ Para evitar la fragmentación entre IDEs (VS Code, Android Studio, Claude Code),
 - **Mantén las Reglas Claras**: Una IA trabaja mejor con prohibiciones explícitas (ej: "No uses wildcard imports").
 
 ---
-**Standard Agent Infrastructure** — {{PROJECT_NAME}}
+**Standard Agent Infrastructure** — SnapDoc

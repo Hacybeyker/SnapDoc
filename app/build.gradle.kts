@@ -9,13 +9,13 @@ plugins {
 }
 
 android {
-    namespace = "com.hacybeyker.scaffoldingandroidcompose"
+    namespace = "com.hacybeyker.snapdoc"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.hacybeyker.scaffoldingandroidcompose"
+        applicationId = "com.hacybeyker.snapdoc"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

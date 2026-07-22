@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ScaffoldingAndroidCompose"
+rootProject.name = "SnapDoc"
 include(":app")

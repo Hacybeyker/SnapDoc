@@ -4,14 +4,14 @@ description: 'Android nativo + Jetpack Compose master skill. Vertical Slice Arch
 license: MIT
 ---
 
-# Android + Jetpack Compose Master Skill — {{PROJECT_NAME}}
+# Android + Jetpack Compose Master Skill — SnapDoc
 
 Esta es la guía definitiva para implementar funcionalidades en este proyecto. Cualquier implementación debe ser predecible, testeable y alineada con los estándares de producción de Google.
 
 ## 🏗️ Project Anatomy
 
 ```
-{{MODULE_NAME}}/src/main/java/{{PACKAGE_PATH}}/
+app/src/main/java/com/hacybeyker/snapdoc/
 ├── core/                      # Compartido SOLO si ≥2 features lo necesitan (YAGNI)
 │   ├── di/                    #   módulos Hilt transversales
 │   └── ui/theme/              #   design tokens (Color, Type, Shape, Spacing, Theme)
