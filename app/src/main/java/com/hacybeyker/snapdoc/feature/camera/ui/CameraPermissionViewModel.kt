@@ -1,9 +1,9 @@
 package com.hacybeyker.snapdoc.feature.camera.ui
 
 import androidx.lifecycle.ViewModel
-import com.hacybeyker.snapdoc.feature.camera.domain.CameraPermissionRepository
 import com.hacybeyker.snapdoc.feature.camera.domain.CameraPermissionStatus
 import com.hacybeyker.snapdoc.feature.camera.domain.EvaluateCameraPermissionUseCase
+import com.hacybeyker.snapdoc.feature.camera.domain.IsCameraPermissionGrantedUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 
 @HiltViewModel
 class CameraPermissionViewModel @Inject constructor(
-    private val cameraPermissionRepository: CameraPermissionRepository,
+    private val isCameraPermissionGrantedUseCase: IsCameraPermissionGrantedUseCase,
     private val evaluateCameraPermissionUseCase: EvaluateCameraPermissionUseCase
 ) : ViewModel() {
 
@@ -28,7 +28,7 @@ class CameraPermissionViewModel @Inject constructor(
     val effects: Flow<CameraPermissionEffect> = _effects.receiveAsFlow()
 
     init {
-        react(isGranted = cameraPermissionRepository.hasCameraPermission(), shouldShowRationale = false)
+        react(isGranted = isCameraPermissionGrantedUseCase(), shouldShowRationale = false)
     }
 
     fun onIntent(intent: CameraPermissionIntent) {
@@ -41,7 +41,19 @@ class CameraPermissionViewModel @Inject constructor(
 
             CameraPermissionIntent.OpenAppSettings ->
                 _effects.trySend(CameraPermissionEffect.OpenAppSettings)
+
+            CameraPermissionIntent.ScreenResumed -> onScreenResumed()
         }
+    }
+
+    /**
+     * Only the permanently-denied branch is re-evaluated: that is the state a user can leave by
+     * flipping the permission in Settings. Re-running the full evaluation on every resume would
+     * mistake the first resume (right after `init` already requested) for a denial.
+     */
+    private fun onScreenResumed() {
+        if (_uiState.value != CameraPermissionUiState.PermanentlyDenied) return
+        react(isGranted = isCameraPermissionGrantedUseCase(), shouldShowRationale = false)
     }
 
     private fun react(isGranted: Boolean, shouldShowRationale: Boolean) {

@@ -1,10 +1,10 @@
 package com.hacybeyker.snapdoc.feature.camera.ui
 
 import android.Manifest
-import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -27,6 +27,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hacybeyker.snapdoc.R
 import com.hacybeyker.snapdoc.core.ui.theme.SnapDocTheme
@@ -36,7 +38,7 @@ import com.hacybeyker.snapdoc.core.ui.theme.spacing
 fun CameraPermissionScreen(modifier: Modifier = Modifier, viewModel: CameraPermissionViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val activity = context as? Activity
+    val activity = LocalActivity.current
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -44,6 +46,10 @@ fun CameraPermissionScreen(modifier: Modifier = Modifier, viewModel: CameraPermi
         val shouldShowRationale =
             activity?.shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) == true
         viewModel.onIntent(CameraPermissionIntent.PermissionResultReceived(isGranted, shouldShowRationale))
+    }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.onIntent(CameraPermissionIntent.ScreenResumed)
     }
 
     LaunchedEffect(viewModel) {
@@ -66,6 +72,7 @@ fun CameraPermissionScreen(modifier: Modifier = Modifier, viewModel: CameraPermi
         uiState = uiState,
         onRequestPermission = { viewModel.onIntent(CameraPermissionIntent.RequestPermission) },
         onOpenSettings = { viewModel.onIntent(CameraPermissionIntent.OpenAppSettings) },
+        grantedContent = { CameraPreviewScreen() },
         modifier = modifier
     )
 }
@@ -75,6 +82,7 @@ private fun CameraPermissionContent(
     uiState: CameraPermissionUiState,
     onRequestPermission: () -> Unit,
     onOpenSettings: () -> Unit,
+    grantedContent: @Composable () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -82,12 +90,9 @@ private fun CameraPermissionContent(
             CameraPermissionUiState.Checking ->
                 CircularProgressIndicator()
 
-            CameraPermissionUiState.Granted ->
-                // Placeholder until the camera preview slice replaces it.
-                Text(
-                    text = stringResource(R.string.camera_permission_granted),
-                    style = MaterialTheme.typography.titleMedium
-                )
+            // A slot, so this Content stays stateless and previewable while the real screen
+            // plugs in the live camera.
+            CameraPermissionUiState.Granted -> grantedContent()
 
             CameraPermissionUiState.RationaleRequired ->
                 PermissionMessage(
@@ -129,7 +134,8 @@ private fun CameraPermissionContentRationalePreview() {
         CameraPermissionContent(
             uiState = CameraPermissionUiState.RationaleRequired,
             onRequestPermission = {},
-            onOpenSettings = {}
+            onOpenSettings = {},
+            grantedContent = {}
         )
     }
 }
@@ -141,7 +147,8 @@ private fun CameraPermissionContentPermanentlyDeniedPreview() {
         CameraPermissionContent(
             uiState = CameraPermissionUiState.PermanentlyDenied,
             onRequestPermission = {},
-            onOpenSettings = {}
+            onOpenSettings = {},
+            grantedContent = {}
         )
     }
 }
