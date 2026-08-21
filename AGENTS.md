@@ -63,6 +63,7 @@ Every screen is driven by an immutable state:
 - **Styling**: hardcoding colors/dp/sp in Composables is forbidden. Use the tokens from `core/ui/theme/` (`MaterialTheme.colorScheme/typography/shapes/spacing`).
 - **Imports**: wildcard imports (`import x.*`) and trailing commas are forbidden (enforced by ktlint at build time).
 - **Dependencies**: always in `gradle/libs.versions.toml` with `version.ref`; **stable** versions only.
+- **Naming**: never suffix a class with `Impl` (`XxxRepositoryImpl`) — it's a meaningless label that says nothing about the implementation. Name it after what backs it instead (`AndroidCameraPermissionRepository`, `RoomBookRepository`, `InMemoryCache...`); this also parallels test doubles named `Fake...`/`Stub...`.
 
 ### 4. SOLID & Design Patterns
 - **SRP**: one class, one responsibility (small UseCases, one Mapper per transformation).

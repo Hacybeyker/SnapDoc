@@ -71,7 +71,7 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.kotlinx.serialization.core)
     implementation(libs.hilt.android)
-    implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     ksp(libs.hilt.compiler)
     annotationProcessor(libs.kotlin.metadata.jvm)
     testImplementation(libs.junit)

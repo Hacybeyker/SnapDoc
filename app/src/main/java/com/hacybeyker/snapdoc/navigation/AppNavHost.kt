@@ -7,6 +7,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import com.hacybeyker.snapdoc.feature.camera.ui.CameraPermissionScreen
 import com.hacybeyker.snapdoc.feature.home.ui.HomeScreen
 
 @Composable
@@ -21,7 +22,8 @@ fun AppNavHost(modifier: Modifier = Modifier) {
             rememberViewModelStoreNavEntryDecorator()
         ),
         entryProvider = entryProvider {
-            entry<Home> { HomeScreen() }
+            entry<Home> { HomeScreen(onScanClick = { backStack.add(Camera) }) }
+            entry<Camera> { CameraPermissionScreen() }
         }
     )
 }

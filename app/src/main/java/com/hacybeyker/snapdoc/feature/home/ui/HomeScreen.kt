@@ -2,7 +2,10 @@ package com.hacybeyker.snapdoc.feature.home.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -13,19 +16,36 @@ import com.hacybeyker.snapdoc.R
 import com.hacybeyker.snapdoc.core.ui.theme.SnapDocTheme
 
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(
-            text = stringResource(R.string.app_name),
-            style = MaterialTheme.typography.headlineMedium
-        )
+fun HomeScreen(modifier: Modifier = Modifier, onScanClick: () -> Unit = {}) {
+    HomeContent(modifier = modifier, onScanClick = onScanClick)
+}
+
+@Composable
+private fun HomeContent(modifier: Modifier = Modifier, onScanClick: () -> Unit) {
+    Scaffold(
+        modifier = modifier,
+        floatingActionButton = {
+            ExtendedFloatingActionButton(onClick = onScanClick) {
+                Text(text = stringResource(R.string.home_scan_action))
+            }
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.headlineMedium
+            )
+        }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun HomeScreenPreview() {
+private fun HomeContentPreview() {
     SnapDocTheme {
-        HomeScreen()
+        HomeContent(onScanClick = {})
     }
 }
