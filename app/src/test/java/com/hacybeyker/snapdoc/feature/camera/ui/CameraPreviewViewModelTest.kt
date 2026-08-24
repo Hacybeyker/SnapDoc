@@ -3,9 +3,12 @@ package com.hacybeyker.snapdoc.feature.camera.ui
 import app.cash.turbine.test
 import com.hacybeyker.snapdoc.core.test.MainDispatcherRule
 import com.hacybeyker.snapdoc.feature.camera.domain.BuildScanFileNameUseCase
+import com.hacybeyker.snapdoc.feature.camera.domain.EvaluateLiveTextHintUseCase
 import com.hacybeyker.snapdoc.feature.camera.domain.FakePhotoStorageRepository
 import com.hacybeyker.snapdoc.feature.camera.domain.FakeScannedPageReader
 import com.hacybeyker.snapdoc.feature.camera.domain.ImportScannedPagesUseCase
+import com.hacybeyker.snapdoc.feature.camera.domain.LiveTextHint
+import com.hacybeyker.snapdoc.feature.camera.domain.LiveTextReading
 import com.hacybeyker.snapdoc.feature.camera.domain.SaveCapturedPhotoUseCase
 import java.io.IOException
 import java.time.ZoneId
@@ -35,8 +38,13 @@ class CameraPreviewViewModelTest {
                 scannedPageReader = FakeScannedPageReader(),
                 saveCapturedPhotoUseCase = saveCapturedPhotoUseCase,
                 photoStorageRepository = storage
-            )
+            ),
+            evaluateLiveTextHintUseCase = EvaluateLiveTextHintUseCase()
         )
+    }
+
+    private fun CameraPreviewViewModel.analyze(vararg blockCounts: Int) = blockCounts.forEach {
+        onIntent(CameraPreviewIntent.FrameAnalyzed(LiveTextReading(it)))
     }
 
     @Test
@@ -243,5 +251,101 @@ class CameraPreviewViewModelTest {
 
         val state = sut.uiState.value as CameraPreviewUiState.Ready
         assertEquals(emptyList<String>(), state.lastImagePaths)
+    }
+
+    @Test
+    fun `live analysis says nothing until enough frames agree`() = runTest(mainDispatcherRule.testDispatcher) {
+        val sut = viewModel()
+        sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+
+        sut.analyze(3, 3)
+
+        val state = sut.uiState.value as CameraPreviewUiState.Ready
+        assertEquals(LiveTextHint.Searching, state.liveTextHint)
+    }
+
+    @Test
+    fun `frames that agree on seeing text report it in the viewfinder`() = runTest(mainDispatcherRule.testDispatcher) {
+        val sut = viewModel()
+        sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+
+        sut.analyze(2, 3, 4)
+
+        val state = sut.uiState.value as CameraPreviewUiState.Ready
+        assertEquals(LiveTextHint.TextVisible(4), state.liveTextHint)
+    }
+
+    @Test
+    fun `a hand crossing the frame does not wipe the hint`() = runTest(mainDispatcherRule.testDispatcher) {
+        val sut = viewModel()
+        sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+        sut.analyze(2, 3, 4)
+
+        sut.analyze(0)
+
+        val state = sut.uiState.value as CameraPreviewUiState.Ready
+        assertEquals(LiveTextHint.TextVisible(4), state.liveTextHint)
+    }
+
+    @Test
+    fun `the window only remembers the newest frames, so the hint can recover`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            val sut = viewModel()
+            sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+            sut.analyze(5, 5, 5)
+
+            sut.analyze(0, 0, 0)
+
+            val state = sut.uiState.value as CameraPreviewUiState.Ready
+            assertEquals(LiveTextHint.NoTextVisible, state.liveTextHint)
+        }
+
+    @Test
+    fun `turning live analysis off forgets what it had seen`() = runTest(mainDispatcherRule.testDispatcher) {
+        val sut = viewModel()
+        sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+        sut.analyze(2, 3, 4)
+
+        sut.onIntent(CameraPreviewIntent.ToggleLiveAnalysis)
+
+        val state = sut.uiState.value as CameraPreviewUiState.Ready
+        assertEquals(false, state.isLiveAnalysisEnabled)
+        assertEquals(LiveTextHint.Searching, state.liveTextHint)
+    }
+
+    @Test
+    fun `frames arriving while live analysis is off are ignored`() = runTest(mainDispatcherRule.testDispatcher) {
+        val sut = viewModel()
+        sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+        sut.onIntent(CameraPreviewIntent.ToggleLiveAnalysis)
+
+        sut.analyze(2, 3, 4)
+
+        val state = sut.uiState.value as CameraPreviewUiState.Ready
+        assertEquals(LiveTextHint.Searching, state.liveTextHint)
+    }
+
+    @Test
+    fun `turning it back on starts the window from scratch`() = runTest(mainDispatcherRule.testDispatcher) {
+        val sut = viewModel()
+        sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+        sut.analyze(2, 3, 4)
+        sut.onIntent(CameraPreviewIntent.ToggleLiveAnalysis)
+
+        sut.onIntent(CameraPreviewIntent.ToggleLiveAnalysis)
+        sut.analyze(6, 6)
+
+        val state = sut.uiState.value as CameraPreviewUiState.Ready
+        assertEquals(true, state.isLiveAnalysisEnabled)
+        assertEquals(LiveTextHint.Searching, state.liveTextHint)
+    }
+
+    @Test
+    fun `frames analyzed before the viewfinder is ready are dropped`() = runTest(mainDispatcherRule.testDispatcher) {
+        val sut = viewModel()
+
+        sut.analyze(2, 3, 4)
+
+        assertEquals(CameraPreviewUiState.Starting, sut.uiState.value)
     }
 }

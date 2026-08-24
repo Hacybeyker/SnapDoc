@@ -19,6 +19,11 @@
     <string name="camera_preview_scanner_unavailable">The document scanner is not available on this device.</string>
 
     <string name="camera_preview_extract_text">Extract text</string>
+    <string name="camera_preview_live_searching">Looking for text…</string>
+    <string name="camera_preview_live_no_text">No text in view</string>
+    <string name="camera_preview_live_off">Live text off</string>
+    <string name="camera_preview_live_turn_on">Turn on</string>
+    <string name="camera_preview_live_turn_off">Turn off</string>
 
     <string name="document_text_title">Recognized text</string>
     <string name="document_text_page">Page %1$d</string>
@@ -33,5 +38,10 @@
     <plurals name="camera_preview_pages_scanned">
         <item quantity="one">1 page scanned and saved</item>
         <item quantity="other">%1$d pages scanned and saved</item>
+    </plurals>
+
+    <plurals name="camera_preview_live_text_visible">
+        <item quantity="one">1 text block in view</item>
+        <item quantity="other">%1$d text blocks in view</item>
     </plurals>
 </resources>

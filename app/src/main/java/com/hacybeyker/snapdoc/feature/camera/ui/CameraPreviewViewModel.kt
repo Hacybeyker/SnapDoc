@@ -2,7 +2,10 @@ package com.hacybeyker.snapdoc.feature.camera.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hacybeyker.snapdoc.feature.camera.domain.EvaluateLiveTextHintUseCase
 import com.hacybeyker.snapdoc.feature.camera.domain.ImportScannedPagesUseCase
+import com.hacybeyker.snapdoc.feature.camera.domain.LiveTextHint
+import com.hacybeyker.snapdoc.feature.camera.domain.LiveTextReading
 import com.hacybeyker.snapdoc.feature.camera.domain.SaveCapturedPhotoUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -17,8 +20,15 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class CameraPreviewViewModel @Inject constructor(
     private val saveCapturedPhotoUseCase: SaveCapturedPhotoUseCase,
-    private val importScannedPagesUseCase: ImportScannedPagesUseCase
+    private val importScannedPagesUseCase: ImportScannedPagesUseCase,
+    private val evaluateLiveTextHintUseCase: EvaluateLiveTextHintUseCase
 ) : ViewModel() {
+
+    /**
+     * Kept outside the UiState: it is the debounce's working memory, not something the screen draws,
+     * and it changes several times per second. Bounded so a long session cannot grow it.
+     */
+    private val recentReadings = ArrayDeque<LiveTextReading>()
 
     private val _uiState = MutableStateFlow<CameraPreviewUiState>(CameraPreviewUiState.Starting)
     val uiState: StateFlow<CameraPreviewUiState> = _uiState.asStateFlow()
@@ -34,6 +44,9 @@ class CameraPreviewViewModel @Inject constructor(
             is CameraPreviewIntent.PhotoCaptured -> onPhotoCaptured(intent)
             CameraPreviewIntent.CaptureFailed ->
                 updateReady { it.copy(isCapturing = false, captureError = CameraPreviewUiState.CaptureError.Camera) }
+
+            is CameraPreviewIntent.FrameAnalyzed -> onFrameAnalyzed(intent.reading)
+            CameraPreviewIntent.ToggleLiveAnalysis -> onToggleLiveAnalysis()
 
             CameraPreviewIntent.ScanDocument -> onScanDocument()
             is CameraPreviewIntent.PagesScanned -> onPagesScanned(intent)
@@ -58,6 +71,34 @@ class CameraPreviewViewModel @Inject constructor(
         if (ready.isCapturing) return
         _uiState.value = ready.copy(isCapturing = true, captureError = null)
         _effects.trySend(CameraPreviewEffect.TakePicture)
+    }
+
+    /**
+     * Runs on every analyzed frame, so it does as little as possible: it only publishes a new state
+     * when the debounced hint actually changed, which keeps a steady document from allocating a
+     * fresh Ready several times a second for no visible difference.
+     */
+    private fun onFrameAnalyzed(reading: LiveTextReading) {
+        val ready = _uiState.value as? CameraPreviewUiState.Ready ?: return
+        if (!ready.isLiveAnalysisEnabled) return
+        recentReadings.addLast(reading)
+        while (recentReadings.size > EvaluateLiveTextHintUseCase.AGREEING_FRAMES) {
+            recentReadings.removeFirst()
+        }
+        val hint = evaluateLiveTextHintUseCase(recentReadings.toList(), ready.liveTextHint)
+        if (hint != ready.liveTextHint) {
+            _uiState.value = ready.copy(liveTextHint = hint)
+        }
+    }
+
+    /** Turning it back on starts from scratch: frames from before the pause say nothing about now. */
+    private fun onToggleLiveAnalysis() {
+        val ready = _uiState.value as? CameraPreviewUiState.Ready ?: return
+        recentReadings.clear()
+        _uiState.value = ready.copy(
+            isLiveAnalysisEnabled = !ready.isLiveAnalysisEnabled,
+            liveTextHint = LiveTextHint.Searching
+        )
     }
 
     private fun onScanDocument() {

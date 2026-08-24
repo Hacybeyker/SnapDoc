@@ -1,5 +1,7 @@
 package com.hacybeyker.snapdoc.feature.camera.ui
 
+import com.hacybeyker.snapdoc.feature.camera.domain.LiveTextReading
+
 sealed interface CameraPreviewIntent {
     data object ViewfinderReady : CameraPreviewIntent
     data object CameraUnavailable : CameraPreviewIntent
@@ -16,6 +18,10 @@ sealed interface CameraPreviewIntent {
         override fun hashCode(): Int = 31 * jpegBytes.contentHashCode() + capturedAtEpochMillis.hashCode()
     }
     data object CaptureFailed : CameraPreviewIntent
+
+    /** Arrives many times per second while live analysis is on; carries no frame, only its verdict. */
+    data class FrameAnalyzed(val reading: LiveTextReading) : CameraPreviewIntent
+    data object ToggleLiveAnalysis : CameraPreviewIntent
 
     data object ScanDocument : CameraPreviewIntent
 

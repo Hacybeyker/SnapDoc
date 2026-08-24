@@ -1,6 +1,7 @@
 package com.hacybeyker.snapdoc.feature.camera.ui
 
 import com.hacybeyker.snapdoc.feature.camera.domain.CapturedPhoto
+import com.hacybeyker.snapdoc.feature.camera.domain.LiveTextHint
 import com.hacybeyker.snapdoc.feature.camera.domain.ScannedDocument
 
 /**
@@ -16,7 +17,13 @@ sealed interface CameraPreviewUiState {
         val isScanning: Boolean = false,
         val lastPhoto: CapturedPhoto? = null,
         val lastScan: ScannedDocument? = null,
-        val captureError: CaptureError? = null
+        val captureError: CaptureError? = null,
+        /**
+         * On by default: the hint is a framing aid, and one you have to go find a switch for guides
+         * nobody. The switch exists because continuous inference is a real battery cost.
+         */
+        val isLiveAnalysisEnabled: Boolean = true,
+        val liveTextHint: LiveTextHint = LiveTextHint.Searching
     ) : CameraPreviewUiState {
 
         /**
