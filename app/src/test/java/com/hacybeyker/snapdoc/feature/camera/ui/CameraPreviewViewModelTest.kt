@@ -10,9 +10,12 @@ import com.hacybeyker.snapdoc.feature.camera.domain.ImportScannedPagesUseCase
 import com.hacybeyker.snapdoc.feature.camera.domain.LiveTextHint
 import com.hacybeyker.snapdoc.feature.camera.domain.LiveTextReading
 import com.hacybeyker.snapdoc.feature.camera.domain.SaveCapturedPhotoUseCase
+import com.hacybeyker.snapdoc.feature.library.domain.FakeDocumentRepository
+import com.hacybeyker.snapdoc.feature.library.domain.SaveScannedDocumentUseCase
 import java.io.IOException
 import java.time.ZoneId
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -26,7 +29,10 @@ class CameraPreviewViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private fun viewModel(storageFailure: Throwable? = null): CameraPreviewViewModel {
+    private fun viewModel(
+        storageFailure: Throwable? = null,
+        archive: FakeDocumentRepository = FakeDocumentRepository()
+    ): CameraPreviewViewModel {
         val storage = FakePhotoStorageRepository(storageFailure)
         val saveCapturedPhotoUseCase = SaveCapturedPhotoUseCase(
             photoStorageRepository = storage,
@@ -39,7 +45,8 @@ class CameraPreviewViewModelTest {
                 saveCapturedPhotoUseCase = saveCapturedPhotoUseCase,
                 photoStorageRepository = storage
             ),
-            evaluateLiveTextHintUseCase = EvaluateLiveTextHintUseCase()
+            evaluateLiveTextHintUseCase = EvaluateLiveTextHintUseCase(),
+            saveScannedDocumentUseCase = SaveScannedDocumentUseCase(archive)
         )
     }
 
@@ -347,5 +354,48 @@ class CameraPreviewViewModelTest {
         sut.analyze(2, 3, 4)
 
         assertEquals(CameraPreviewUiState.Starting, sut.uiState.value)
+    }
+
+    @Test
+    fun `a captured photo reaches the archive without having to be read first`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            val archive = FakeDocumentRepository()
+            val sut = viewModel(archive = archive)
+            sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+
+            sut.onIntent(CameraPreviewIntent.PhotoCaptured(byteArrayOf(1), 1_787_250_612_345))
+            advanceUntilIdle()
+
+            val stored = archive.observeAll().first().single()
+            assertEquals(listOf("/fake/scans/scan_20260820_133012_345.jpg"), stored.imagePaths)
+            assertEquals(1_787_250_612_345, stored.createdAtEpochMillis)
+            assertEquals(false, stored.hasBeenRead)
+        }
+
+    @Test
+    fun `every page of a scan is archived under one entry`() = runTest(mainDispatcherRule.testDispatcher) {
+        val archive = FakeDocumentRepository()
+        val sut = viewModel(archive = archive)
+        sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+
+        sut.onIntent(
+            CameraPreviewIntent.PagesScanned(listOf("content://scan/1", "content://scan/2"), 1_787_250_612_345)
+        )
+        advanceUntilIdle()
+
+        val stored = archive.observeAll().first().single()
+        assertEquals(2, stored.pageCount)
+    }
+
+    @Test
+    fun `a capture that could not be saved is not archived either`() = runTest(mainDispatcherRule.testDispatcher) {
+        val archive = FakeDocumentRepository()
+        val sut = viewModel(storageFailure = IOException("disk full"), archive = archive)
+        sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+
+        sut.onIntent(CameraPreviewIntent.PhotoCaptured(byteArrayOf(1), 0))
+        advanceUntilIdle()
+
+        assertEquals(emptyList<Any>(), archive.observeAll().first())
     }
 }

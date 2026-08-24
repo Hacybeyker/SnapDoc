@@ -9,6 +9,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.hacybeyker.snapdoc.feature.camera.ui.CameraPermissionScreen
 import com.hacybeyker.snapdoc.feature.home.ui.HomeScreen
+import com.hacybeyker.snapdoc.feature.library.ui.LibraryScreen
 import com.hacybeyker.snapdoc.feature.ocr.ui.DocumentTextScreen
 
 @Composable
@@ -23,7 +24,15 @@ fun AppNavHost(modifier: Modifier = Modifier) {
             rememberViewModelStoreNavEntryDecorator()
         ),
         entryProvider = entryProvider {
-            entry<Home> { HomeScreen(onScanClick = { backStack.add(Camera) }) }
+            entry<Home> {
+                HomeScreen(
+                    onScanClick = { backStack.add(Camera) },
+                    onLibraryClick = { backStack.add(Library) }
+                )
+            }
+            entry<Library> {
+                LibraryScreen(onOpenDocument = { paths -> backStack.add(DocumentText(paths)) })
+            }
             entry<Camera> {
                 CameraPermissionScreen(
                     onExtractText = { imagePaths -> backStack.add(DocumentText(imagePaths)) }

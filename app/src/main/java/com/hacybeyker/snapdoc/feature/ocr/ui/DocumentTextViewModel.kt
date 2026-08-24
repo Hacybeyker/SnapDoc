@@ -2,6 +2,8 @@ package com.hacybeyker.snapdoc.feature.ocr.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hacybeyker.snapdoc.core.document.DocumentInsight
+import com.hacybeyker.snapdoc.feature.library.domain.SaveScannedDocumentUseCase
 import com.hacybeyker.snapdoc.feature.ocr.domain.GenerateDocumentInsightUseCase
 import com.hacybeyker.snapdoc.feature.ocr.domain.ModelAvailability
 import com.hacybeyker.snapdoc.feature.ocr.domain.ModelDownload
@@ -22,7 +24,8 @@ import kotlinx.coroutines.launch
 class DocumentTextViewModel @Inject constructor(
     private val recognizeDocumentTextUseCase: RecognizeDocumentTextUseCase,
     private val generateDocumentInsightUseCase: GenerateDocumentInsightUseCase,
-    private val onDeviceDocumentAnalyzer: OnDeviceDocumentAnalyzer
+    private val onDeviceDocumentAnalyzer: OnDeviceDocumentAnalyzer,
+    private val saveScannedDocumentUseCase: SaveScannedDocumentUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<DocumentTextUiState>(DocumentTextUiState.Recognizing)
@@ -84,6 +87,26 @@ class DocumentTextViewModel @Inject constructor(
     private suspend fun analyze(text: String) {
         val insight = generateDocumentInsightUseCase(text)
         updateContent { it.copy(insight = insight) }
+        archive(text, insight)
+    }
+
+    /**
+     * Archiving happens after the analysis, not after the OCR, so the stored row carries the best
+     * answer the device could give. Re-reading the same pages later replaces that row rather than
+     * adding another, which is how an insight upgraded by a freshly downloaded model reaches the
+     * archive too. A failure here is swallowed on purpose: the user came to read the document, and
+     * losing the archive entry is not worth replacing what they came for with an error.
+     */
+    private suspend fun archive(text: String, insight: DocumentInsight) {
+        val imagePaths = requestedPaths ?: return
+        runCatching {
+            saveScannedDocumentUseCase(
+                imagePaths = imagePaths,
+                text = text,
+                insight = insight,
+                createdAtEpochMillis = System.currentTimeMillis()
+            )
+        }
     }
 
     /**

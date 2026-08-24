@@ -1,5 +1,6 @@
 package com.hacybeyker.snapdoc.feature.ocr.domain
 
+import com.hacybeyker.snapdoc.core.document.DocumentInsight
 import kotlinx.coroutines.flow.Flow
 
 /**

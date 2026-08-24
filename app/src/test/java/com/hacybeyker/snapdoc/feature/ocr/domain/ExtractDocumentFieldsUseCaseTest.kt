@@ -1,5 +1,7 @@
 package com.hacybeyker.snapdoc.feature.ocr.domain
 
+import com.hacybeyker.snapdoc.core.document.DocumentKind
+import com.hacybeyker.snapdoc.core.document.InsightSource
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

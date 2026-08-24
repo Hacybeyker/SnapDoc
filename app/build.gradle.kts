@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
+    alias(libs.plugins.room)
 }
 
 android {
@@ -50,6 +51,12 @@ android {
     }
 }
 
+// Exported schemas are what make a versioned migration reviewable; without them Room cannot
+// diff versions and `fallbackToDestructiveMigration` becomes the tempting shortcut.
+room {
+    schemaDirectory("$projectDir/schemas")
+}
+
 composeCompiler {
     stabilityConfigurationFiles.add(rootProject.layout.projectDirectory.file("compose_stability.conf"))
 }
@@ -78,6 +85,9 @@ dependencies {
     implementation(libs.mlkit.text.recognition)
     implementation(libs.mlkit.genai.prompt)
     implementation(libs.kotlinx.coroutines.play.services)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     ksp(libs.hilt.compiler)

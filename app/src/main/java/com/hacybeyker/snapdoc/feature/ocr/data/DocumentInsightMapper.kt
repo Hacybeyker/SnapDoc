@@ -1,8 +1,8 @@
 package com.hacybeyker.snapdoc.feature.ocr.data
 
-import com.hacybeyker.snapdoc.feature.ocr.domain.DocumentInsight
-import com.hacybeyker.snapdoc.feature.ocr.domain.DocumentKind
-import com.hacybeyker.snapdoc.feature.ocr.domain.InsightSource
+import com.hacybeyker.snapdoc.core.document.DocumentInsight
+import com.hacybeyker.snapdoc.core.document.DocumentKind
+import com.hacybeyker.snapdoc.core.document.InsightSource
 
 /**
  * Maps the model's reply into the domain.

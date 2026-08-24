@@ -13,10 +13,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.hacybeyker.snapdoc.R
+import com.hacybeyker.snapdoc.core.document.DocumentInsight
+import com.hacybeyker.snapdoc.core.document.DocumentKind
+import com.hacybeyker.snapdoc.core.document.InsightSource
 import com.hacybeyker.snapdoc.core.ui.theme.spacing
-import com.hacybeyker.snapdoc.feature.ocr.domain.DocumentInsight
-import com.hacybeyker.snapdoc.feature.ocr.domain.DocumentKind
-import com.hacybeyker.snapdoc.feature.ocr.domain.InsightSource
 
 /*
  * What the app understood about the document, and what it can say about the model that read it.

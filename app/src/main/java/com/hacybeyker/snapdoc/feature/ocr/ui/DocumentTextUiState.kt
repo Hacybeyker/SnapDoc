@@ -1,6 +1,6 @@
 package com.hacybeyker.snapdoc.feature.ocr.ui
 
-import com.hacybeyker.snapdoc.feature.ocr.domain.DocumentInsight
+import com.hacybeyker.snapdoc.core.document.DocumentInsight
 import com.hacybeyker.snapdoc.feature.ocr.domain.RecognizedDocument
 
 sealed interface DocumentTextUiState {

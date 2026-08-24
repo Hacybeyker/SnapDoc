@@ -1,12 +1,14 @@
 package com.hacybeyker.snapdoc.feature.home.ui
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,12 +18,12 @@ import com.hacybeyker.snapdoc.R
 import com.hacybeyker.snapdoc.core.ui.theme.SnapDocTheme
 
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier, onScanClick: () -> Unit = {}) {
-    HomeContent(modifier = modifier, onScanClick = onScanClick)
+fun HomeScreen(modifier: Modifier = Modifier, onScanClick: () -> Unit = {}, onLibraryClick: () -> Unit = {}) {
+    HomeContent(modifier = modifier, onScanClick = onScanClick, onLibraryClick = onLibraryClick)
 }
 
 @Composable
-private fun HomeContent(modifier: Modifier = Modifier, onScanClick: () -> Unit) {
+private fun HomeContent(modifier: Modifier = Modifier, onScanClick: () -> Unit, onLibraryClick: () -> Unit) {
     Scaffold(
         modifier = modifier,
         floatingActionButton = {
@@ -34,10 +36,15 @@ private fun HomeContent(modifier: Modifier = Modifier, onScanClick: () -> Unit) 
             modifier = Modifier.fillMaxSize().padding(innerPadding),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.headlineMedium
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.headlineMedium
+                )
+                TextButton(onClick = onLibraryClick) {
+                    Text(text = stringResource(R.string.home_library_action))
+                }
+            }
         }
     }
 }
@@ -46,6 +53,6 @@ private fun HomeContent(modifier: Modifier = Modifier, onScanClick: () -> Unit) 
 @Composable
 private fun HomeContentPreview() {
     SnapDocTheme {
-        HomeContent(onScanClick = {})
+        HomeContent(onScanClick = {}, onLibraryClick = {})
     }
 }

@@ -2,6 +2,18 @@
     <string name="app_name">SnapDoc</string>
 
     <string name="home_scan_action">Scan</string>
+    <string name="home_library_action">My documents</string>
+
+    <string name="library_search_label">Search your documents</string>
+    <string name="library_empty">Nothing scanned yet. Your documents will show up here.</string>
+    <string name="library_no_matches">No document contains that.</string>
+    <string name="library_delete">Delete</string>
+    <string name="library_not_read">Not read yet — tap to extract its text</string>
+
+    <plurals name="library_page_count">
+        <item quantity="one">1 page</item>
+        <item quantity="other">%1$d pages</item>
+    </plurals>
 
     <string name="camera_permission_rationale_title">SnapDoc needs the camera</string>
     <string name="camera_permission_rationale_message">SnapDoc uses your device\'s camera to scan documents. All processing happens on your phone.</string>

@@ -1,17 +1,20 @@
 package com.hacybeyker.snapdoc.feature.ocr.ui
 
 import app.cash.turbine.test
+import com.hacybeyker.snapdoc.core.document.InsightSource
 import com.hacybeyker.snapdoc.core.test.MainDispatcherRule
+import com.hacybeyker.snapdoc.feature.library.domain.FakeDocumentRepository
+import com.hacybeyker.snapdoc.feature.library.domain.SaveScannedDocumentUseCase
 import com.hacybeyker.snapdoc.feature.ocr.domain.ExtractDocumentFieldsUseCase
 import com.hacybeyker.snapdoc.feature.ocr.domain.FakeDocumentTextRecognizer
 import com.hacybeyker.snapdoc.feature.ocr.domain.FakeOnDeviceDocumentAnalyzer
 import com.hacybeyker.snapdoc.feature.ocr.domain.GenerateDocumentInsightUseCase
-import com.hacybeyker.snapdoc.feature.ocr.domain.InsightSource
 import com.hacybeyker.snapdoc.feature.ocr.domain.ModelAvailability
 import com.hacybeyker.snapdoc.feature.ocr.domain.ModelDownload
 import com.hacybeyker.snapdoc.feature.ocr.domain.RecognizeDocumentTextUseCase
 import java.io.IOException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -30,11 +33,13 @@ class DocumentTextViewModelTest {
 
     private fun viewModel(
         recognizer: FakeDocumentTextRecognizer = this.recognizer,
-        analyzer: FakeOnDeviceDocumentAnalyzer = FakeOnDeviceDocumentAnalyzer(ModelAvailability.Unavailable)
+        analyzer: FakeOnDeviceDocumentAnalyzer = FakeOnDeviceDocumentAnalyzer(ModelAvailability.Unavailable),
+        archive: FakeDocumentRepository = FakeDocumentRepository()
     ) = DocumentTextViewModel(
         recognizeDocumentTextUseCase = RecognizeDocumentTextUseCase(recognizer),
         generateDocumentInsightUseCase = GenerateDocumentInsightUseCase(analyzer, ExtractDocumentFieldsUseCase()),
-        onDeviceDocumentAnalyzer = analyzer
+        onDeviceDocumentAnalyzer = analyzer,
+        saveScannedDocumentUseCase = SaveScannedDocumentUseCase(archive)
     )
 
     @Test
@@ -219,6 +224,31 @@ class DocumentTextViewModelTest {
 
             val state = sut.uiState.value as DocumentTextUiState.Content
             assertEquals(DocumentTextUiState.ModelStatus.Unavailable, state.modelStatus)
+        }
+
+    @Test
+    fun `a read document is archived so it can be found again later`() = runTest(mainDispatcherRule.testDispatcher) {
+        val archive = FakeDocumentRepository()
+        val sut = viewModel(archive = archive)
+
+        sut.onIntent(DocumentTextIntent.RecognizeText(listOf(RECEIPT)))
+        advanceUntilIdle()
+
+        val stored = archive.observeAll().first().single()
+        assertEquals(listOf(RECEIPT), stored.imagePaths)
+        assertEquals("HARDWARE STORE\nTOTAL 16.30", stored.text)
+    }
+
+    @Test
+    fun `a document with no readable text leaves nothing in the archive`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            val archive = FakeDocumentRepository()
+            val sut = viewModel(recognizer = FakeDocumentTextRecognizer(), archive = archive)
+
+            sut.onIntent(DocumentTextIntent.RecognizeText(listOf("/scans/blank.jpg")))
+            advanceUntilIdle()
+
+            assertEquals(emptyList<Any>(), archive.observeAll().first())
         }
 
     private companion object {

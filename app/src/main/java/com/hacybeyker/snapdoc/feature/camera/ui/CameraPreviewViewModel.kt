@@ -2,11 +2,14 @@ package com.hacybeyker.snapdoc.feature.camera.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hacybeyker.snapdoc.core.document.DocumentInsight
+import com.hacybeyker.snapdoc.core.document.InsightSource
 import com.hacybeyker.snapdoc.feature.camera.domain.EvaluateLiveTextHintUseCase
 import com.hacybeyker.snapdoc.feature.camera.domain.ImportScannedPagesUseCase
 import com.hacybeyker.snapdoc.feature.camera.domain.LiveTextHint
 import com.hacybeyker.snapdoc.feature.camera.domain.LiveTextReading
 import com.hacybeyker.snapdoc.feature.camera.domain.SaveCapturedPhotoUseCase
+import com.hacybeyker.snapdoc.feature.library.domain.SaveScannedDocumentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
@@ -21,7 +24,8 @@ import kotlinx.coroutines.launch
 class CameraPreviewViewModel @Inject constructor(
     private val saveCapturedPhotoUseCase: SaveCapturedPhotoUseCase,
     private val importScannedPagesUseCase: ImportScannedPagesUseCase,
-    private val evaluateLiveTextHintUseCase: EvaluateLiveTextHintUseCase
+    private val evaluateLiveTextHintUseCase: EvaluateLiveTextHintUseCase,
+    private val saveScannedDocumentUseCase: SaveScannedDocumentUseCase
 ) : ViewModel() {
 
     /**
@@ -117,6 +121,7 @@ class CameraPreviewViewModel @Inject constructor(
                     updateReady {
                         it.copy(isScanning = false, lastScan = document, lastPhoto = null, captureError = null)
                     }
+                    archive(document.pages.map { page -> page.filePath }, intent.scannedAtEpochMillis)
                 }
                 .onFailure {
                     updateReady {
@@ -133,12 +138,29 @@ class CameraPreviewViewModel @Inject constructor(
                     updateReady {
                         it.copy(isCapturing = false, lastPhoto = photo, lastScan = null, captureError = null)
                     }
+                    archive(listOf(photo.filePath), photo.capturedAtEpochMillis)
                 }
                 .onFailure {
                     updateReady {
                         it.copy(isCapturing = false, captureError = CameraPreviewUiState.CaptureError.Storage)
                     }
                 }
+        }
+    }
+
+    /**
+     * A scan belongs to the user the moment it exists, not once they happen to open it — so it is
+     * archived here, with no text yet, and reading it later fills in the rest of the same entry.
+     * Failing to archive must not surface as a capture error: the photo is safely on disk either way.
+     */
+    private suspend fun archive(imagePaths: List<String>, createdAtEpochMillis: Long) {
+        runCatching {
+            saveScannedDocumentUseCase(
+                imagePaths = imagePaths,
+                text = "",
+                insight = DocumentInsight.empty(InsightSource.Rules),
+                createdAtEpochMillis = createdAtEpochMillis
+            )
         }
     }
 

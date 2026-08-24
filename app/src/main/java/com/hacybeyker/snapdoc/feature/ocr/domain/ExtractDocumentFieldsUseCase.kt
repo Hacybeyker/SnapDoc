@@ -1,5 +1,8 @@
 package com.hacybeyker.snapdoc.feature.ocr.domain
 
+import com.hacybeyker.snapdoc.core.document.DocumentInsight
+import com.hacybeyker.snapdoc.core.document.DocumentKind
+import com.hacybeyker.snapdoc.core.document.InsightSource
 import javax.inject.Inject
 
 /**

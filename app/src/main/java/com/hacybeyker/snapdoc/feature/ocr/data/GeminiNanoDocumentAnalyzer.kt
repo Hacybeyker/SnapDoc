@@ -4,7 +4,7 @@ import com.google.mlkit.genai.common.DownloadStatus
 import com.google.mlkit.genai.common.FeatureStatus
 import com.google.mlkit.genai.prompt.Generation
 import com.hacybeyker.snapdoc.core.coroutines.IoDispatcher
-import com.hacybeyker.snapdoc.feature.ocr.domain.DocumentInsight
+import com.hacybeyker.snapdoc.core.document.DocumentInsight
 import com.hacybeyker.snapdoc.feature.ocr.domain.ModelAvailability
 import com.hacybeyker.snapdoc.feature.ocr.domain.ModelDownload
 import com.hacybeyker.snapdoc.feature.ocr.domain.OnDeviceDocumentAnalyzer

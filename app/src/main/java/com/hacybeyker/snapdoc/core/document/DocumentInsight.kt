@@ -1,4 +1,9 @@
-package com.hacybeyker.snapdoc.feature.ocr.domain
+package com.hacybeyker.snapdoc.core.document
+
+/*
+ * Promoted out of feature/ocr the moment a second slice needed it: the OCR slice produces an
+ * insight and the library slice stores one, which is exactly the threshold AGENTS.md sets for core/.
+ */
 
 /** What the document turned out to be. [Unknown] is a real answer, not a failure. */
 enum class DocumentKind { Receipt, Invoice, IdDocument, Note, Unknown }
