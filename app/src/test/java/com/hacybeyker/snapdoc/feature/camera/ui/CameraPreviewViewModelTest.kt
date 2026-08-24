@@ -4,9 +4,12 @@ import app.cash.turbine.test
 import com.hacybeyker.snapdoc.core.test.MainDispatcherRule
 import com.hacybeyker.snapdoc.feature.camera.domain.BuildScanFileNameUseCase
 import com.hacybeyker.snapdoc.feature.camera.domain.FakePhotoStorageRepository
+import com.hacybeyker.snapdoc.feature.camera.domain.FakeScannedPageReader
+import com.hacybeyker.snapdoc.feature.camera.domain.ImportScannedPagesUseCase
 import com.hacybeyker.snapdoc.feature.camera.domain.SaveCapturedPhotoUseCase
 import java.io.IOException
 import java.time.ZoneId
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -14,17 +17,25 @@ import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class CameraPreviewViewModelTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private fun viewModel(storageFailure: Throwable? = null) = CameraPreviewViewModel(
-        saveCapturedPhotoUseCase = SaveCapturedPhotoUseCase(
+    private fun viewModel(storageFailure: Throwable? = null): CameraPreviewViewModel {
+        val saveCapturedPhotoUseCase = SaveCapturedPhotoUseCase(
             photoStorageRepository = FakePhotoStorageRepository(storageFailure),
             buildScanFileNameUseCase = BuildScanFileNameUseCase(ZoneId.of("America/Lima"))
         )
-    )
+        return CameraPreviewViewModel(
+            saveCapturedPhotoUseCase = saveCapturedPhotoUseCase,
+            importScannedPagesUseCase = ImportScannedPagesUseCase(
+                scannedPageReader = FakeScannedPageReader(),
+                saveCapturedPhotoUseCase = saveCapturedPhotoUseCase
+            )
+        )
+    }
 
     @Test
     fun `starts while the camera is being bound`() = runTest(mainDispatcherRule.testDispatcher) {
@@ -128,5 +139,61 @@ class CameraPreviewViewModelTest {
             captureError = CameraPreviewUiState.CaptureError.Camera
         )
         assertEquals(expected, sut.uiState.value)
+    }
+
+    @Test
+    fun `scanning asks the screen to open the guided scanner and blocks the button meanwhile`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            val sut = viewModel()
+            sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+
+            sut.onIntent(CameraPreviewIntent.ScanDocument)
+
+            sut.effects.test { assertEquals(CameraPreviewEffect.LaunchDocumentScanner, awaitItem()) }
+            assertEquals(CameraPreviewUiState.Ready(isScanning = true), sut.uiState.value)
+        }
+
+    @Test
+    fun `scanned pages are imported and reported`() = runTest(mainDispatcherRule.testDispatcher) {
+        val sut = viewModel()
+        sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+        sut.onIntent(CameraPreviewIntent.ScanDocument)
+
+        sut.onIntent(
+            CameraPreviewIntent.PagesScanned(
+                pageUris = listOf("content://scan/1", "content://scan/2"),
+                scannedAtEpochMillis = 1_787_250_612_345
+            )
+        )
+        advanceUntilIdle()
+
+        val state = sut.uiState.value as CameraPreviewUiState.Ready
+        assertEquals(2, state.lastScan?.pageCount)
+        assertEquals(false, state.isScanning)
+        assertNull(state.captureError)
+    }
+
+    @Test
+    fun `dismissing the scanner leaves no error behind`() = runTest(mainDispatcherRule.testDispatcher) {
+        val sut = viewModel()
+        sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+        sut.onIntent(CameraPreviewIntent.ScanDocument)
+
+        sut.onIntent(CameraPreviewIntent.ScanDismissed)
+
+        assertEquals(CameraPreviewUiState.Ready(), sut.uiState.value)
+    }
+
+    @Test
+    fun `a scanner that cannot start is reported as such`() = runTest(mainDispatcherRule.testDispatcher) {
+        val sut = viewModel()
+        sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+        sut.onIntent(CameraPreviewIntent.ScanDocument)
+
+        sut.onIntent(CameraPreviewIntent.ScanFailed)
+
+        val state = sut.uiState.value as CameraPreviewUiState.Ready
+        assertEquals(CameraPreviewUiState.CaptureError.Scanner, state.captureError)
+        assertEquals(false, state.isScanning)
     }
 }

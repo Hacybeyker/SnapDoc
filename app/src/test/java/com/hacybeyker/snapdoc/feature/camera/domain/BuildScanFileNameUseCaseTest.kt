@@ -23,4 +23,13 @@ class BuildScanFileNameUseCaseTest {
 
         assertEquals(false, first == second)
     }
+
+    @Test
+    fun `a page number keeps the pages of one scan apart`() {
+        val first = sut(capturedAtEpochMillis = 1_787_250_612_345, pageNumber = 1)
+        val second = sut(capturedAtEpochMillis = 1_787_250_612_345, pageNumber = 2)
+
+        assertEquals("scan_20260820_133012_345_p1.jpg", first)
+        assertEquals("scan_20260820_133012_345_p2.jpg", second)
+    }
 }

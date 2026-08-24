@@ -15,4 +15,11 @@
     <string name="camera_preview_capture_failed">The camera could not take the photo. Try again.</string>
     <string name="camera_preview_save_failed">The photo was taken but could not be saved.</string>
     <string name="camera_preview_photo_saved">Saved as %1$s</string>
+    <string name="camera_preview_scan_document">Scan document</string>
+    <string name="camera_preview_scanner_unavailable">The document scanner is not available on this device.</string>
+
+    <plurals name="camera_preview_pages_scanned">
+        <item quantity="one">1 page scanned and saved</item>
+        <item quantity="other">%1$d pages scanned and saved</item>
+    </plurals>
 </resources>

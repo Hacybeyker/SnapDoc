@@ -1,6 +1,12 @@
 package com.hacybeyker.snapdoc.feature.camera.ui
 
+import android.app.Activity
+import android.content.IntentSender
 import android.util.Log
+import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -13,11 +19,14 @@ import androidx.camera.lifecycle.awaitInstance
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -29,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview as ComposePreview
@@ -36,21 +46,55 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import com.hacybeyker.snapdoc.R
 import com.hacybeyker.snapdoc.core.ui.theme.SnapDocTheme
 import com.hacybeyker.snapdoc.core.ui.theme.spacing
 
+private const val CAMERA_LOG_TAG = "SnapDocCamera"
+
+/** Enough for a multi-page contract without letting a runaway session fill internal storage. */
+private const val SCANNER_PAGE_LIMIT = 10
+
 @Composable
 fun CameraPreviewScreen(modifier: Modifier = Modifier, viewModel: CameraPreviewViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val imageCapture = remember { ImageCapture.Builder().build() }
+    val surfaceRequest = rememberBoundCamera(
+        imageCapture = imageCapture,
+        onViewfinderReady = { viewModel.onIntent(CameraPreviewIntent.ViewfinderReady) },
+        onCameraUnavailable = { viewModel.onIntent(CameraPreviewIntent.CameraUnavailable) }
+    )
+
+    CameraPreviewEffects(viewModel = viewModel, imageCapture = imageCapture)
+
+    CameraPreviewContent(
+        uiState = uiState,
+        surfaceRequest = surfaceRequest,
+        onCaptureClick = { viewModel.onIntent(CameraPreviewIntent.CapturePhoto) },
+        onScanClick = { viewModel.onIntent(CameraPreviewIntent.ScanDocument) },
+        modifier = modifier
+    )
+}
+
+/**
+ * Binding CameraX is framework plumbing, not business logic — the same split the permission screen
+ * uses: the Screen owns the platform handles, the ViewModel owns the state. Returns the surface the
+ * viewfinder must draw on, which never reaches the ViewModel because it cannot be built in a test.
+ */
+@Composable
+private fun rememberBoundCamera(
+    imageCapture: ImageCapture,
+    onViewfinderReady: () -> Unit,
+    onCameraUnavailable: () -> Unit
+): SurfaceRequest? {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val imageCapture = remember { ImageCapture.Builder().build() }
     var surfaceRequest by remember { mutableStateOf<SurfaceRequest?>(null) }
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
 
-    // Binding CameraX is framework plumbing, not business logic — the same split the permission
-    // screen already uses: the Screen owns the platform handles, the ViewModel owns the state.
     // bindToLifecycle must run on the main thread, which LaunchedEffect guarantees.
     LaunchedEffect(lifecycleOwner) {
         runCatching {
@@ -58,7 +102,7 @@ fun CameraPreviewScreen(modifier: Modifier = Modifier, viewModel: CameraPreviewV
             val preview = Preview.Builder().build().apply {
                 setSurfaceProvider { request ->
                     surfaceRequest = request
-                    viewModel.onIntent(CameraPreviewIntent.ViewfinderReady)
+                    onViewfinderReady()
                 }
             }
             provider.unbindAll()
@@ -68,7 +112,7 @@ fun CameraPreviewScreen(modifier: Modifier = Modifier, viewModel: CameraPreviewV
             cameraProvider = provider
         }.onFailure { cause ->
             Log.e(CAMERA_LOG_TAG, "Could not bind the camera", cause)
-            viewModel.onIntent(CameraPreviewIntent.CameraUnavailable)
+            onCameraUnavailable()
         }
     }
 
@@ -80,9 +124,39 @@ fun CameraPreviewScreen(modifier: Modifier = Modifier, viewModel: CameraPreviewV
         onDispose { cameraProvider?.unbindAll() }
     }
 
+    return surfaceRequest
+}
+
+@Composable
+private fun CameraPreviewEffects(viewModel: CameraPreviewViewModel, imageCapture: ImageCapture) {
+    val context = LocalContext.current
+    val activity = LocalActivity.current
+
+    val scannerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        val pages = GmsDocumentScanningResult.fromActivityResultIntent(result.data)?.pages
+        if (result.resultCode != Activity.RESULT_OK || pages.isNullOrEmpty()) {
+            viewModel.onIntent(CameraPreviewIntent.ScanDismissed)
+        } else {
+            viewModel.onIntent(
+                CameraPreviewIntent.PagesScanned(
+                    pageUris = pages.map { it.imageUri.toString() },
+                    scannedAtEpochMillis = System.currentTimeMillis()
+                )
+            )
+        }
+    }
+
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
             when (effect) {
+                CameraPreviewEffect.LaunchDocumentScanner -> launchDocumentScanner(
+                    activity = activity,
+                    onIntentSender = { scannerLauncher.launch(IntentSenderRequest.Builder(it).build()) },
+                    onFailure = { viewModel.onIntent(CameraPreviewIntent.ScanFailed) }
+                )
+
                 CameraPreviewEffect.TakePicture -> imageCapture.takePicture(
                     ContextCompat.getMainExecutor(context),
                     object : ImageCapture.OnImageCapturedCallback() {
@@ -99,16 +173,34 @@ fun CameraPreviewScreen(modifier: Modifier = Modifier, viewModel: CameraPreviewV
             }
         }
     }
-
-    CameraPreviewContent(
-        uiState = uiState,
-        surfaceRequest = surfaceRequest,
-        onCaptureClick = { viewModel.onIntent(CameraPreviewIntent.CapturePhoto) },
-        modifier = modifier
-    )
 }
 
-private const val CAMERA_LOG_TAG = "SnapDocCamera"
+/**
+ * The guided scanner runs in its own Play services activity, so the app hands over control and gets
+ * back cropped, deskewed pages instead of reimplementing edge detection. Asking for the intent is
+ * asynchronous because Play services may have to download the scanner module first — and that Task
+ * is exactly where a device without Play services fails.
+ */
+private fun launchDocumentScanner(activity: Activity?, onIntentSender: (IntentSender) -> Unit, onFailure: () -> Unit) {
+    if (activity == null) {
+        Log.e(CAMERA_LOG_TAG, "No activity available to launch the document scanner")
+        onFailure()
+        return
+    }
+    val options = GmsDocumentScannerOptions.Builder()
+        .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+        .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+        .setGalleryImportAllowed(true)
+        .setPageLimit(SCANNER_PAGE_LIMIT)
+        .build()
+    GmsDocumentScanning.getClient(options)
+        .getStartScanIntent(activity)
+        .addOnSuccessListener(onIntentSender)
+        .addOnFailureListener { cause ->
+            Log.e(CAMERA_LOG_TAG, "Could not start the document scanner", cause)
+            onFailure()
+        }
+}
 
 /** ImageCapture defaults to JPEG output, which arrives whole in the first plane. */
 private fun ImageProxy.toPhotoCapturedIntent(): CameraPreviewIntent.PhotoCaptured {
@@ -123,6 +215,7 @@ private fun CameraPreviewContent(
     uiState: CameraPreviewUiState,
     surfaceRequest: SurfaceRequest?,
     onCaptureClick: () -> Unit,
+    onScanClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -139,7 +232,8 @@ private fun CameraPreviewContent(
             is CameraPreviewUiState.Ready -> ReadyContent(
                 uiState = uiState,
                 surfaceRequest = surfaceRequest,
-                onCaptureClick = onCaptureClick
+                onCaptureClick = onCaptureClick,
+                onScanClick = onScanClick
             )
         }
     }
@@ -149,7 +243,8 @@ private fun CameraPreviewContent(
 private fun ReadyContent(
     uiState: CameraPreviewUiState.Ready,
     surfaceRequest: SurfaceRequest?,
-    onCaptureClick: () -> Unit
+    onCaptureClick: () -> Unit,
+    onScanClick: () -> Unit
 ) {
     if (surfaceRequest != null) {
         CameraXViewfinder(surfaceRequest = surfaceRequest, modifier = Modifier.fillMaxSize())
@@ -160,7 +255,11 @@ private fun ReadyContent(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         CaptureStatus(uiState = uiState)
-        Button(onClick = onCaptureClick, enabled = !uiState.isCapturing) {
+        Button(onClick = onScanClick, enabled = !uiState.isScanning) {
+            Text(text = stringResource(R.string.camera_preview_scan_document))
+        }
+        Spacer(Modifier.height(MaterialTheme.spacing.sm))
+        OutlinedButton(onClick = onCaptureClick, enabled = !uiState.isCapturing) {
             Text(text = stringResource(R.string.camera_preview_shutter))
         }
     }
@@ -174,6 +273,15 @@ private fun CaptureStatus(uiState: CameraPreviewUiState.Ready) {
 
         uiState.captureError == CameraPreviewUiState.CaptureError.Storage ->
             stringResource(R.string.camera_preview_save_failed)
+
+        uiState.captureError == CameraPreviewUiState.CaptureError.Scanner ->
+            stringResource(R.string.camera_preview_scanner_unavailable)
+
+        uiState.lastScan != null -> pluralStringResource(
+            R.plurals.camera_preview_pages_scanned,
+            uiState.lastScan.pageCount,
+            uiState.lastScan.pageCount
+        )
 
         uiState.lastPhoto != null -> stringResource(R.string.camera_preview_photo_saved, uiState.lastPhoto.fileName)
         else -> null
@@ -192,7 +300,12 @@ private fun CaptureStatus(uiState: CameraPreviewUiState.Ready) {
 @Composable
 private fun CameraPreviewContentStartingPreview() {
     SnapDocTheme {
-        CameraPreviewContent(uiState = CameraPreviewUiState.Starting, surfaceRequest = null, onCaptureClick = {})
+        CameraPreviewContent(
+            uiState = CameraPreviewUiState.Starting,
+            surfaceRequest = null,
+            onCaptureClick = {},
+            onScanClick = {}
+        )
     }
 }
 
@@ -200,7 +313,12 @@ private fun CameraPreviewContentStartingPreview() {
 @Composable
 private fun CameraPreviewContentUnavailablePreview() {
     SnapDocTheme {
-        CameraPreviewContent(uiState = CameraPreviewUiState.Unavailable, surfaceRequest = null, onCaptureClick = {})
+        CameraPreviewContent(
+            uiState = CameraPreviewUiState.Unavailable,
+            surfaceRequest = null,
+            onCaptureClick = {},
+            onScanClick = {}
+        )
     }
 }
 
@@ -211,7 +329,8 @@ private fun CameraPreviewContentReadyPreview() {
         CameraPreviewContent(
             uiState = CameraPreviewUiState.Ready(),
             surfaceRequest = null,
-            onCaptureClick = {}
+            onCaptureClick = {},
+            onScanClick = {}
         )
     }
 }

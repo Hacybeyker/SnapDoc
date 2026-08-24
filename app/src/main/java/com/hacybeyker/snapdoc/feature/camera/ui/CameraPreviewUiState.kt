@@ -1,6 +1,7 @@
 package com.hacybeyker.snapdoc.feature.camera.ui
 
 import com.hacybeyker.snapdoc.feature.camera.domain.CapturedPhoto
+import com.hacybeyker.snapdoc.feature.camera.domain.ScannedDocument
 
 /**
  * Deliberately free of CameraX types: the viewfinder's `SurfaceRequest` is a platform handle with
@@ -12,12 +13,14 @@ sealed interface CameraPreviewUiState {
 
     data class Ready(
         val isCapturing: Boolean = false,
+        val isScanning: Boolean = false,
         val lastPhoto: CapturedPhoto? = null,
+        val lastScan: ScannedDocument? = null,
         val captureError: CaptureError? = null
     ) : CameraPreviewUiState
 
     /** Kept apart because they fail for unrelated reasons and the user can act on only one of them. */
-    enum class CaptureError { Camera, Storage }
+    enum class CaptureError { Camera, Storage, Scanner }
 
     data object Unavailable : CameraPreviewUiState
 }

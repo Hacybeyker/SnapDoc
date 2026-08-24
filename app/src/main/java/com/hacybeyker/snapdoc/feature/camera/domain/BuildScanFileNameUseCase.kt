@@ -13,9 +13,14 @@ import javax.inject.Inject
  */
 class BuildScanFileNameUseCase @Inject constructor(private val zoneId: ZoneId) {
 
-    operator fun invoke(capturedAtEpochMillis: Long): String {
+    /**
+     * [pageNumber] is what keeps a multi-page scan from overwriting itself: every page of one run
+     * shares the same instant, so the timestamp alone would name them all identically.
+     */
+    operator fun invoke(capturedAtEpochMillis: Long, pageNumber: Int? = null): String {
         val timestamp = FORMATTER.format(Instant.ofEpochMilli(capturedAtEpochMillis).atZone(zoneId))
-        return "scan_$timestamp.jpg"
+        val pageSuffix = pageNumber?.let { "_p$it" }.orEmpty()
+        return "scan_$timestamp$pageSuffix.jpg"
     }
 
     private companion object {

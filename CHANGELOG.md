@@ -8,6 +8,7 @@
 ## [Unreleased]
 
 ### ✨ Added
+- Guided document scanning with ML Kit: edge detection, cropping, perspective correction and multi-page scans (up to 10 pages, gallery import allowed) run in the Play services scanner, and every returned page is copied into the app's own storage
 - Live camera preview with CameraX and photo capture: the granted-permission branch now streams the viewfinder and saves each shot as a JPEG in the app's internal storage (`filesDir/scans/`)
 - Capture feedback tells the two failure modes apart — the camera refusing to take the photo and the photo failing to be written to disk — and the camera errors are logged under the `SnapDocCamera` tag
 - Camera permission flow as a full vertical slice (`feature/camera`): rationale and permanently-denied screens, automatic first request, and a shortcut to the system app settings

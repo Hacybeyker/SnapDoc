@@ -16,4 +16,11 @@ sealed interface CameraPreviewIntent {
         override fun hashCode(): Int = 31 * jpegBytes.contentHashCode() + capturedAtEpochMillis.hashCode()
     }
     data object CaptureFailed : CameraPreviewIntent
+
+    data object ScanDocument : CameraPreviewIntent
+
+    /** The guided scanner returns file locations, not bytes; the pages are imported from them. */
+    data class PagesScanned(val pageUris: List<String>, val scannedAtEpochMillis: Long) : CameraPreviewIntent
+    data object ScanDismissed : CameraPreviewIntent
+    data object ScanFailed : CameraPreviewIntent
 }

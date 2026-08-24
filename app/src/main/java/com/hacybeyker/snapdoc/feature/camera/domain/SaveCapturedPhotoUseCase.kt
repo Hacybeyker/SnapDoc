@@ -11,9 +11,13 @@ class SaveCapturedPhotoUseCase @Inject constructor(
      * An empty buffer means CameraX handed back a frame with no payload — writing it would leave a
      * 0-byte file on disk that later stages (OCR) would happily try to decode. Fail here instead.
      */
-    suspend operator fun invoke(jpegBytes: ByteArray, capturedAtEpochMillis: Long): CapturedPhoto {
+    suspend operator fun invoke(
+        jpegBytes: ByteArray,
+        capturedAtEpochMillis: Long,
+        pageNumber: Int? = null
+    ): CapturedPhoto {
         require(jpegBytes.isNotEmpty()) { "Cannot save an empty photo" }
-        val fileName = buildScanFileNameUseCase(capturedAtEpochMillis)
+        val fileName = buildScanFileNameUseCase(capturedAtEpochMillis, pageNumber)
         return photoStorageRepository.savePhoto(jpegBytes, fileName, capturedAtEpochMillis)
     }
 }

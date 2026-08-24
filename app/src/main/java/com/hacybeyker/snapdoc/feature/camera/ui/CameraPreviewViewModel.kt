@@ -2,6 +2,7 @@ package com.hacybeyker.snapdoc.feature.camera.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hacybeyker.snapdoc.feature.camera.domain.ImportScannedPagesUseCase
 import com.hacybeyker.snapdoc.feature.camera.domain.SaveCapturedPhotoUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -14,8 +15,10 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class CameraPreviewViewModel @Inject constructor(private val saveCapturedPhotoUseCase: SaveCapturedPhotoUseCase) :
-    ViewModel() {
+class CameraPreviewViewModel @Inject constructor(
+    private val saveCapturedPhotoUseCase: SaveCapturedPhotoUseCase,
+    private val importScannedPagesUseCase: ImportScannedPagesUseCase
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow<CameraPreviewUiState>(CameraPreviewUiState.Starting)
     val uiState: StateFlow<CameraPreviewUiState> = _uiState.asStateFlow()
@@ -31,6 +34,13 @@ class CameraPreviewViewModel @Inject constructor(private val saveCapturedPhotoUs
             is CameraPreviewIntent.PhotoCaptured -> onPhotoCaptured(intent)
             CameraPreviewIntent.CaptureFailed ->
                 updateReady { it.copy(isCapturing = false, captureError = CameraPreviewUiState.CaptureError.Camera) }
+
+            CameraPreviewIntent.ScanDocument -> onScanDocument()
+            is CameraPreviewIntent.PagesScanned -> onPagesScanned(intent)
+            CameraPreviewIntent.ScanDismissed -> updateReady { it.copy(isScanning = false) }
+
+            CameraPreviewIntent.ScanFailed ->
+                updateReady { it.copy(isScanning = false, captureError = CameraPreviewUiState.CaptureError.Scanner) }
         }
     }
 
@@ -48,6 +58,27 @@ class CameraPreviewViewModel @Inject constructor(private val saveCapturedPhotoUs
         if (ready.isCapturing) return
         _uiState.value = ready.copy(isCapturing = true, captureError = null)
         _effects.trySend(CameraPreviewEffect.TakePicture)
+    }
+
+    private fun onScanDocument() {
+        val ready = _uiState.value as? CameraPreviewUiState.Ready ?: return
+        if (ready.isScanning) return
+        _uiState.value = ready.copy(isScanning = true, captureError = null)
+        _effects.trySend(CameraPreviewEffect.LaunchDocumentScanner)
+    }
+
+    private fun onPagesScanned(intent: CameraPreviewIntent.PagesScanned) {
+        viewModelScope.launch {
+            runCatching { importScannedPagesUseCase(intent.pageUris, intent.scannedAtEpochMillis) }
+                .onSuccess { document ->
+                    updateReady { it.copy(isScanning = false, lastScan = document, captureError = null) }
+                }
+                .onFailure {
+                    updateReady {
+                        it.copy(isScanning = false, captureError = CameraPreviewUiState.CaptureError.Storage)
+                    }
+                }
+        }
     }
 
     private fun onPhotoCaptured(intent: CameraPreviewIntent.PhotoCaptured) {

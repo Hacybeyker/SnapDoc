@@ -2,6 +2,7 @@ package com.hacybeyker.snapdoc.feature.camera.data
 
 import com.hacybeyker.snapdoc.feature.camera.domain.CameraPermissionRepository
 import com.hacybeyker.snapdoc.feature.camera.domain.PhotoStorageRepository
+import com.hacybeyker.snapdoc.feature.camera.domain.ScannedPageReader
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -18,6 +19,9 @@ interface CameraModule {
 
     @Binds
     fun bindPhotoStorageRepository(repository: InternalStoragePhotoRepository): PhotoStorageRepository
+
+    @Binds
+    fun bindScannedPageReader(reader: ContentResolverPageReader): ScannedPageReader
 
     companion object {
 
