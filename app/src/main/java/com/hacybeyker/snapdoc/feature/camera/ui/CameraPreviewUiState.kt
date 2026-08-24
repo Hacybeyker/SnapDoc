@@ -17,7 +17,15 @@ sealed interface CameraPreviewUiState {
         val lastPhoto: CapturedPhoto? = null,
         val lastScan: ScannedDocument? = null,
         val captureError: CaptureError? = null
-    ) : CameraPreviewUiState
+    ) : CameraPreviewUiState {
+
+        /**
+         * The pages "Extract text" would read. A capture and a scan clear each other in the
+         * ViewModel, so only one of the two is ever set and "the last thing produced" is unambiguous.
+         */
+        val lastImagePaths: List<String>
+            get() = lastScan?.pages?.map { it.filePath } ?: listOfNotNull(lastPhoto?.filePath)
+    }
 
     /** Kept apart because they fail for unrelated reasons and the user can act on only one of them. */
     enum class CaptureError { Camera, Storage, Scanner }

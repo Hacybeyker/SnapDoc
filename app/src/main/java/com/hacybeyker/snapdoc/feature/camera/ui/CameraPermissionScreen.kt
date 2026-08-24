@@ -35,7 +35,11 @@ import com.hacybeyker.snapdoc.core.ui.theme.SnapDocTheme
 import com.hacybeyker.snapdoc.core.ui.theme.spacing
 
 @Composable
-fun CameraPermissionScreen(modifier: Modifier = Modifier, viewModel: CameraPermissionViewModel = hiltViewModel()) {
+fun CameraPermissionScreen(
+    modifier: Modifier = Modifier,
+    onExtractText: (List<String>) -> Unit = {},
+    viewModel: CameraPermissionViewModel = hiltViewModel()
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = LocalActivity.current
@@ -72,7 +76,7 @@ fun CameraPermissionScreen(modifier: Modifier = Modifier, viewModel: CameraPermi
         uiState = uiState,
         onRequestPermission = { viewModel.onIntent(CameraPermissionIntent.RequestPermission) },
         onOpenSettings = { viewModel.onIntent(CameraPermissionIntent.OpenAppSettings) },
-        grantedContent = { CameraPreviewScreen() },
+        grantedContent = { CameraPreviewScreen(onExtractText = onExtractText) },
         modifier = modifier
     )
 }

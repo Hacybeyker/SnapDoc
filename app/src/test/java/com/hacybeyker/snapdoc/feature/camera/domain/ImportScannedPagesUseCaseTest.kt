@@ -18,7 +18,8 @@ class ImportScannedPagesUseCaseTest {
         saveCapturedPhotoUseCase = SaveCapturedPhotoUseCase(
             photoStorageRepository = storage,
             buildScanFileNameUseCase = BuildScanFileNameUseCase(ZoneId.of("America/Lima"))
-        )
+        ),
+        photoStorageRepository = storage
     )
 
     @Test
@@ -55,6 +56,45 @@ class ImportScannedPagesUseCaseTest {
 
         assertThrows(FileNotFoundException::class.java) {
             runBlocking { useCase(unavailable)(listOf("content://scan/1"), scannedAtEpochMillis = 0) }
+        }
+    }
+
+    @Test
+    fun `a page that fails halfway deletes the pages already written`() {
+        val failsOnSecondPage = FakeScannedPageReader(
+            failure = FileNotFoundException("gone"),
+            failOnUri = "content://scan/2"
+        )
+
+        assertThrows(FileNotFoundException::class.java) {
+            runBlocking {
+                useCase(failsOnSecondPage)(
+                    pageUris = listOf("content://scan/1", "content://scan/2"),
+                    scannedAtEpochMillis = 1_787_250_612_345
+                )
+            }
+        }
+
+        assertEquals(listOf("scan_20260820_133012_345_p1.jpg"), storage.deletedFileNames)
+        assertEquals(emptyList<String>(), storage.storedFileNames)
+    }
+
+    @Test
+    fun `a rollback that cannot delete still reports why the import failed`() {
+        val undeletable = object : PhotoStorageRepository by storage {
+            override suspend fun deletePhoto(fileName: String) = throw IllegalStateException("read-only")
+        }
+        val useCase = ImportScannedPagesUseCase(
+            scannedPageReader = FakeScannedPageReader(FileNotFoundException("gone"), "content://scan/2"),
+            saveCapturedPhotoUseCase = SaveCapturedPhotoUseCase(
+                photoStorageRepository = storage,
+                buildScanFileNameUseCase = BuildScanFileNameUseCase(ZoneId.of("America/Lima"))
+            ),
+            photoStorageRepository = undeletable
+        )
+
+        assertThrows(FileNotFoundException::class.java) {
+            runBlocking { useCase(listOf("content://scan/1", "content://scan/2"), scannedAtEpochMillis = 0) }
         }
     }
 }

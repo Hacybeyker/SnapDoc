@@ -59,7 +59,11 @@ private const val CAMERA_LOG_TAG = "SnapDocCamera"
 private const val SCANNER_PAGE_LIMIT = 10
 
 @Composable
-fun CameraPreviewScreen(modifier: Modifier = Modifier, viewModel: CameraPreviewViewModel = hiltViewModel()) {
+fun CameraPreviewScreen(
+    modifier: Modifier = Modifier,
+    onExtractText: (List<String>) -> Unit = {},
+    viewModel: CameraPreviewViewModel = hiltViewModel()
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val imageCapture = remember { ImageCapture.Builder().build() }
     val surfaceRequest = rememberBoundCamera(
@@ -75,6 +79,7 @@ fun CameraPreviewScreen(modifier: Modifier = Modifier, viewModel: CameraPreviewV
         surfaceRequest = surfaceRequest,
         onCaptureClick = { viewModel.onIntent(CameraPreviewIntent.CapturePhoto) },
         onScanClick = { viewModel.onIntent(CameraPreviewIntent.ScanDocument) },
+        onExtractTextClick = onExtractText,
         modifier = modifier
     )
 }
@@ -216,6 +221,7 @@ private fun CameraPreviewContent(
     surfaceRequest: SurfaceRequest?,
     onCaptureClick: () -> Unit,
     onScanClick: () -> Unit,
+    onExtractTextClick: (List<String>) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -233,7 +239,8 @@ private fun CameraPreviewContent(
                 uiState = uiState,
                 surfaceRequest = surfaceRequest,
                 onCaptureClick = onCaptureClick,
-                onScanClick = onScanClick
+                onScanClick = onScanClick,
+                onExtractTextClick = onExtractTextClick
             )
         }
     }
@@ -244,7 +251,8 @@ private fun ReadyContent(
     uiState: CameraPreviewUiState.Ready,
     surfaceRequest: SurfaceRequest?,
     onCaptureClick: () -> Unit,
-    onScanClick: () -> Unit
+    onScanClick: () -> Unit,
+    onExtractTextClick: (List<String>) -> Unit
 ) {
     if (surfaceRequest != null) {
         CameraXViewfinder(surfaceRequest = surfaceRequest, modifier = Modifier.fillMaxSize())
@@ -255,6 +263,14 @@ private fun ReadyContent(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         CaptureStatus(uiState = uiState)
+        // Only offered once something is on disk — there is nothing to read text from before that.
+        val imagePaths = uiState.lastImagePaths
+        if (imagePaths.isNotEmpty()) {
+            Button(onClick = { onExtractTextClick(imagePaths) }) {
+                Text(text = stringResource(R.string.camera_preview_extract_text))
+            }
+            Spacer(Modifier.height(MaterialTheme.spacing.sm))
+        }
         Button(onClick = onScanClick, enabled = !uiState.isScanning) {
             Text(text = stringResource(R.string.camera_preview_scan_document))
         }
@@ -304,7 +320,8 @@ private fun CameraPreviewContentStartingPreview() {
             uiState = CameraPreviewUiState.Starting,
             surfaceRequest = null,
             onCaptureClick = {},
-            onScanClick = {}
+            onScanClick = {},
+            onExtractTextClick = {}
         )
     }
 }
@@ -317,7 +334,8 @@ private fun CameraPreviewContentUnavailablePreview() {
             uiState = CameraPreviewUiState.Unavailable,
             surfaceRequest = null,
             onCaptureClick = {},
-            onScanClick = {}
+            onScanClick = {},
+            onExtractTextClick = {}
         )
     }
 }
@@ -330,7 +348,8 @@ private fun CameraPreviewContentReadyPreview() {
             uiState = CameraPreviewUiState.Ready(),
             surfaceRequest = null,
             onCaptureClick = {},
-            onScanClick = {}
+            onScanClick = {},
+            onExtractTextClick = {}
         )
     }
 }

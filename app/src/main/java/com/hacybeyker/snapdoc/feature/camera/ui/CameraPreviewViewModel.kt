@@ -71,7 +71,11 @@ class CameraPreviewViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching { importScannedPagesUseCase(intent.pageUris, intent.scannedAtEpochMillis) }
                 .onSuccess { document ->
-                    updateReady { it.copy(isScanning = false, lastScan = document, captureError = null) }
+                    // lastPhoto is cleared so the two never coexist: whichever the user produced
+                    // last is the one the status line describes and "Extract text" acts on.
+                    updateReady {
+                        it.copy(isScanning = false, lastScan = document, lastPhoto = null, captureError = null)
+                    }
                 }
                 .onFailure {
                     updateReady {
@@ -85,7 +89,9 @@ class CameraPreviewViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching { saveCapturedPhotoUseCase(intent.jpegBytes, intent.capturedAtEpochMillis) }
                 .onSuccess { photo ->
-                    updateReady { it.copy(isCapturing = false, lastPhoto = photo, captureError = null) }
+                    updateReady {
+                        it.copy(isCapturing = false, lastPhoto = photo, lastScan = null, captureError = null)
+                    }
                 }
                 .onFailure {
                     updateReady {

@@ -24,15 +24,17 @@ class CameraPreviewViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private fun viewModel(storageFailure: Throwable? = null): CameraPreviewViewModel {
+        val storage = FakePhotoStorageRepository(storageFailure)
         val saveCapturedPhotoUseCase = SaveCapturedPhotoUseCase(
-            photoStorageRepository = FakePhotoStorageRepository(storageFailure),
+            photoStorageRepository = storage,
             buildScanFileNameUseCase = BuildScanFileNameUseCase(ZoneId.of("America/Lima"))
         )
         return CameraPreviewViewModel(
             saveCapturedPhotoUseCase = saveCapturedPhotoUseCase,
             importScannedPagesUseCase = ImportScannedPagesUseCase(
                 scannedPageReader = FakeScannedPageReader(),
-                saveCapturedPhotoUseCase = saveCapturedPhotoUseCase
+                saveCapturedPhotoUseCase = saveCapturedPhotoUseCase,
+                photoStorageRepository = storage
             )
         )
     }
@@ -195,5 +197,51 @@ class CameraPreviewViewModelTest {
         val state = sut.uiState.value as CameraPreviewUiState.Ready
         assertEquals(CameraPreviewUiState.CaptureError.Scanner, state.captureError)
         assertEquals(false, state.isScanning)
+    }
+
+    @Test
+    fun `an imported scan offers every page to the text extractor`() = runTest(mainDispatcherRule.testDispatcher) {
+        val sut = viewModel()
+        sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+
+        sut.onIntent(
+            CameraPreviewIntent.PagesScanned(
+                pageUris = listOf("content://scan/1", "content://scan/2"),
+                scannedAtEpochMillis = 1_787_250_612_345
+            )
+        )
+        advanceUntilIdle()
+
+        val state = sut.uiState.value as CameraPreviewUiState.Ready
+        assertEquals(
+            listOf("/fake/scans/scan_20260820_133012_345_p1.jpg", "/fake/scans/scan_20260820_133012_345_p2.jpg"),
+            state.lastImagePaths
+        )
+    }
+
+    @Test
+    fun `capturing after a scan replaces it, so the text extractor reads the newer image`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            val sut = viewModel()
+            sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+            sut.onIntent(CameraPreviewIntent.PagesScanned(listOf("content://scan/1"), 1_787_250_612_345))
+            advanceUntilIdle()
+
+            sut.onIntent(CameraPreviewIntent.PhotoCaptured(byteArrayOf(1), 1_787_250_700_000))
+            advanceUntilIdle()
+
+            val state = sut.uiState.value as CameraPreviewUiState.Ready
+            assertNull(state.lastScan)
+            assertEquals(listOf("/fake/scans/scan_20260820_133140_000.jpg"), state.lastImagePaths)
+        }
+
+    @Test
+    fun `nothing captured yet means nothing to extract text from`() = runTest(mainDispatcherRule.testDispatcher) {
+        val sut = viewModel()
+
+        sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+
+        val state = sut.uiState.value as CameraPreviewUiState.Ready
+        assertEquals(emptyList<String>(), state.lastImagePaths)
     }
 }

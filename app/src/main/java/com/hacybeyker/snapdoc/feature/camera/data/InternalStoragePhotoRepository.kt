@@ -32,6 +32,12 @@ class InternalStoragePhotoRepository @Inject constructor(
             )
         }
 
+    override suspend fun deletePhoto(fileName: String) {
+        withContext(ioDispatcher) {
+            File(File(context.filesDir, SCANS_DIRECTORY), fileName).delete()
+        }
+    }
+
     private companion object {
         const val SCANS_DIRECTORY = "scans"
     }
