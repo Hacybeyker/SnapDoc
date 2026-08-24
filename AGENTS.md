@@ -109,7 +109,7 @@ To **review implemented code** (code review against this file's standards), foll
 - ❌ **DO NOT** use `@Preview` on Screen functions (only on Content with fakes).
 - ❌ **DO NOT** use `fallbackToDestructiveMigration` in production code (versioned Room migrations).
 - ❌ **DO NOT** hardcode secrets (API keys, tokens, passwords) or store credentials in plain text. See the [Security Guide](.agents/skills/android-best-practices/references/MOBILE_SECURITY_GUIDE.md).
-- ❌ **DO NOT** add `alpha/beta/rc/snapshot` dependencies to the catalog.
+- ❌ **DO NOT** add `alpha/beta/rc/snapshot` dependencies to the catalog. **One documented exception:** `com.google.mlkit:genai-*`, which has no stable release at all — every on-device Gemini Nano path is pre-release (AICore itself is `0.0.1-exp02`), so the choice is a beta artifact or no on-device generative AI. It is contained by design: `GenerateDocumentInsightUseCase` falls back to rules whenever the model is missing **or fails**, so the app behaves identically on a device where the dependency does nothing. Adding any other pre-release dependency still needs its own explicit decision.
 
 ---
 **Standard Android Config** — SnapDoc

@@ -19,6 +19,9 @@ espressoCore = "3.7.0"
 camerax = "1.6.1"
 mlkitDocumentScanner = "16.0.0"
 mlkitTextRecognition = "16.0.1"
+# Sole exception to the "stable versions only" rule (see AGENTS.md): ML Kit GenAI has no stable
+# release, and every on-device Gemini Nano path is pre-release. Contained by the rule-based fallback.
+mlkitGenaiPrompt = "1.0.0-beta4"
 turbine = "1.2.1"
 
 [libraries]
@@ -50,6 +53,7 @@ androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycl
 androidx-camera-compose = { group = "androidx.camera", name = "camera-compose", version.ref = "camerax" }
 play-services-mlkit-document-scanner = { group = "com.google.android.gms", name = "play-services-mlkit-document-scanner", version.ref = "mlkitDocumentScanner" }
 mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkitTextRecognition" }
+mlkit-genai-prompt = { group = "com.google.mlkit", name = "genai-prompt", version.ref = "mlkitGenaiPrompt" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
 kotlin-metadata-jvm = { group = "org.jetbrains.kotlin", name = "kotlin-metadata-jvm", version.ref = "kotlin" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

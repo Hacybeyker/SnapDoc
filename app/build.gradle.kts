@@ -76,6 +76,7 @@ dependencies {
     implementation(libs.androidx.camera.compose)
     implementation(libs.play.services.mlkit.document.scanner)
     implementation(libs.mlkit.text.recognition)
+    implementation(libs.mlkit.genai.prompt)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)

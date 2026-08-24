@@ -35,6 +35,23 @@
     <string name="document_text_retry">Try again</string>
     <string name="document_text_back">Back</string>
 
+    <string name="document_kind_receipt">Receipt</string>
+    <string name="document_kind_invoice">Invoice</string>
+    <string name="document_kind_id">ID document</string>
+    <string name="document_kind_note">Note</string>
+    <string name="document_kind_unknown">Unrecognized document</string>
+
+    <string name="document_insight_analyzing">Reading the document…</string>
+    <string name="document_insight_merchant">From: %1$s</string>
+    <string name="document_insight_date">Date: %1$s</string>
+    <string name="document_insight_total">Total: %1$s</string>
+    <string name="document_insight_no_fields">No details could be picked out of this document.</string>
+    <string name="document_insight_by_model">Read on this device by Gemini Nano</string>
+    <string name="document_insight_by_rules">Read with text rules — no AI model on this device</string>
+    <string name="document_insight_enable_model">Enable on-device AI for better results</string>
+    <string name="document_insight_downloading">Downloading the AI model… %1$d MB</string>
+    <string name="document_insight_download_failed">The model could not be downloaded. Tap to retry.</string>
+
     <plurals name="camera_preview_pages_scanned">
         <item quantity="one">1 page scanned and saved</item>
         <item quantity="other">%1$d pages scanned and saved</item>

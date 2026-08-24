@@ -2,7 +2,13 @@ package com.hacybeyker.snapdoc.feature.ocr.ui
 
 import app.cash.turbine.test
 import com.hacybeyker.snapdoc.core.test.MainDispatcherRule
+import com.hacybeyker.snapdoc.feature.ocr.domain.ExtractDocumentFieldsUseCase
 import com.hacybeyker.snapdoc.feature.ocr.domain.FakeDocumentTextRecognizer
+import com.hacybeyker.snapdoc.feature.ocr.domain.FakeOnDeviceDocumentAnalyzer
+import com.hacybeyker.snapdoc.feature.ocr.domain.GenerateDocumentInsightUseCase
+import com.hacybeyker.snapdoc.feature.ocr.domain.InsightSource
+import com.hacybeyker.snapdoc.feature.ocr.domain.ModelAvailability
+import com.hacybeyker.snapdoc.feature.ocr.domain.ModelDownload
 import com.hacybeyker.snapdoc.feature.ocr.domain.RecognizeDocumentTextUseCase
 import java.io.IOException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,8 +28,14 @@ class DocumentTextViewModelTest {
         blocksByPath = mapOf(RECEIPT to listOf("HARDWARE STORE", "TOTAL 16.30"))
     )
 
-    private fun viewModel(recognizer: FakeDocumentTextRecognizer = this.recognizer) =
-        DocumentTextViewModel(RecognizeDocumentTextUseCase(recognizer))
+    private fun viewModel(
+        recognizer: FakeDocumentTextRecognizer = this.recognizer,
+        analyzer: FakeOnDeviceDocumentAnalyzer = FakeOnDeviceDocumentAnalyzer(ModelAvailability.Unavailable)
+    ) = DocumentTextViewModel(
+        recognizeDocumentTextUseCase = RecognizeDocumentTextUseCase(recognizer),
+        generateDocumentInsightUseCase = GenerateDocumentInsightUseCase(analyzer, ExtractDocumentFieldsUseCase()),
+        onDeviceDocumentAnalyzer = analyzer
+    )
 
     @Test
     fun `starts while the model is reading the pages`() = runTest(mainDispatcherRule.testDispatcher) {
@@ -119,6 +131,95 @@ class DocumentTextViewModelTest {
 
         sut.effects.test { expectNoEvents() }
     }
+
+    @Test
+    fun `a device without the model still shows what the rules could read`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            val sut = viewModel()
+
+            sut.onIntent(DocumentTextIntent.RecognizeText(listOf(RECEIPT)))
+            advanceUntilIdle()
+
+            val state = sut.uiState.value as DocumentTextUiState.Content
+            assertEquals(InsightSource.Rules, state.insight?.source)
+            assertEquals("16.30", state.insight?.total)
+            assertEquals(DocumentTextUiState.ModelStatus.Unavailable, state.modelStatus)
+        }
+
+    @Test
+    fun `an available model reads the document and the screen says so`() = runTest(mainDispatcherRule.testDispatcher) {
+        val sut = viewModel(analyzer = FakeOnDeviceDocumentAnalyzer(ModelAvailability.Available))
+
+        sut.onIntent(DocumentTextIntent.RecognizeText(listOf(RECEIPT)))
+        advanceUntilIdle()
+
+        val state = sut.uiState.value as DocumentTextUiState.Content
+        assertEquals(InsightSource.OnDeviceModel, state.insight?.source)
+        assertEquals("Hardware Store", state.insight?.merchant)
+        assertEquals(DocumentTextUiState.ModelStatus.Ready, state.modelStatus)
+    }
+
+    @Test
+    fun `a downloadable model is offered without holding back the rules answer`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            val sut = viewModel(analyzer = FakeOnDeviceDocumentAnalyzer(ModelAvailability.Downloadable))
+
+            sut.onIntent(DocumentTextIntent.RecognizeText(listOf(RECEIPT)))
+            advanceUntilIdle()
+
+            val state = sut.uiState.value as DocumentTextUiState.Content
+            assertEquals(DocumentTextUiState.ModelStatus.Downloadable, state.modelStatus)
+            assertEquals(InsightSource.Rules, state.insight?.source)
+        }
+
+    @Test
+    fun `downloading the model re-reads the document, which is when the answer improves`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            val analyzer = FakeOnDeviceDocumentAnalyzer(ModelAvailability.Downloadable)
+            val sut = viewModel(analyzer = analyzer)
+            sut.onIntent(DocumentTextIntent.RecognizeText(listOf(RECEIPT)))
+            advanceUntilIdle()
+
+            sut.onIntent(DocumentTextIntent.EnableOnDeviceModel)
+            advanceUntilIdle()
+
+            val state = sut.uiState.value as DocumentTextUiState.Content
+            assertEquals(DocumentTextUiState.ModelStatus.Ready, state.modelStatus)
+            assertEquals(InsightSource.OnDeviceModel, state.insight?.source)
+        }
+
+    @Test
+    fun `a download that fails leaves the rules answer standing`() = runTest(mainDispatcherRule.testDispatcher) {
+        val analyzer = FakeOnDeviceDocumentAnalyzer(
+            availability = ModelAvailability.Downloadable,
+            downloadSteps = listOf(ModelDownload.Failed(IOException("no space")))
+        )
+        val sut = viewModel(analyzer = analyzer)
+        sut.onIntent(DocumentTextIntent.RecognizeText(listOf(RECEIPT)))
+        advanceUntilIdle()
+
+        sut.onIntent(DocumentTextIntent.EnableOnDeviceModel)
+        advanceUntilIdle()
+
+        val state = sut.uiState.value as DocumentTextUiState.Content
+        assertEquals(DocumentTextUiState.ModelStatus.DownloadFailed, state.modelStatus)
+        assertEquals(InsightSource.Rules, state.insight?.source)
+    }
+
+    @Test
+    fun `there is nothing to download when the device cannot run the model`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            val analyzer = FakeOnDeviceDocumentAnalyzer(ModelAvailability.Unavailable)
+            val sut = viewModel(analyzer = analyzer)
+            sut.onIntent(DocumentTextIntent.RecognizeText(listOf(RECEIPT)))
+            advanceUntilIdle()
+
+            sut.onIntent(DocumentTextIntent.EnableOnDeviceModel)
+            advanceUntilIdle()
+
+            val state = sut.uiState.value as DocumentTextUiState.Content
+            assertEquals(DocumentTextUiState.ModelStatus.Unavailable, state.modelStatus)
+        }
 
     private companion object {
         const val RECEIPT = "/scans/receipt_p1.jpg"

@@ -11,4 +11,7 @@ sealed interface DocumentTextIntent {
     data object Retry : DocumentTextIntent
 
     data object CopyText : DocumentTextIntent
+
+    /** Downloading the model is a deliberate choice: it is a large file on the user's connection. */
+    data object EnableOnDeviceModel : DocumentTextIntent
 }

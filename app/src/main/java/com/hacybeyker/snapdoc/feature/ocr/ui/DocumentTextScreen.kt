@@ -61,6 +61,7 @@ fun DocumentTextScreen(
         onCopyClick = { viewModel.onIntent(DocumentTextIntent.CopyText) },
         onRetryClick = { viewModel.onIntent(DocumentTextIntent.Retry) },
         onBackClick = onBack,
+        onEnableModelClick = { viewModel.onIntent(DocumentTextIntent.EnableOnDeviceModel) },
         modifier = modifier,
         snackbarHostState = snackbarHostState
     )
@@ -94,6 +95,7 @@ private fun DocumentTextContent(
     onCopyClick: () -> Unit,
     onRetryClick: () -> Unit,
     onBackClick: () -> Unit,
+    onEnableModelClick: () -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
@@ -105,8 +107,11 @@ private fun DocumentTextContent(
             when (uiState) {
                 DocumentTextUiState.Recognizing -> CircularProgressIndicator()
 
-                is DocumentTextUiState.Content ->
-                    RecognizedTextPages(document = uiState.document, onCopyClick = onCopyClick)
+                is DocumentTextUiState.Content -> RecognizedTextPages(
+                    uiState = uiState,
+                    onCopyClick = onCopyClick,
+                    onEnableModelClick = onEnableModelClick
+                )
 
                 DocumentTextUiState.Empty -> MessageWithAction(
                     message = stringResource(R.string.document_text_empty),
@@ -125,7 +130,12 @@ private fun DocumentTextContent(
 }
 
 @Composable
-private fun RecognizedTextPages(document: RecognizedDocument, onCopyClick: () -> Unit) {
+private fun RecognizedTextPages(
+    uiState: DocumentTextUiState.Content,
+    onCopyClick: () -> Unit,
+    onEnableModelClick: () -> Unit
+) {
+    val document = uiState.document
     Column(modifier = Modifier.fillMaxSize()) {
         Text(
             text = stringResource(R.string.document_text_title),
@@ -135,6 +145,9 @@ private fun RecognizedTextPages(document: RecognizedDocument, onCopyClick: () ->
         // Selectable so the user can lift a single line out without copying the whole document.
         SelectionContainer(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Column {
+                InsightCard(insight = uiState.insight)
+                ModelStatusRow(modelStatus = uiState.modelStatus, onEnableModelClick = onEnableModelClick)
+                Spacer(Modifier.height(MaterialTheme.spacing.md))
                 document.pages.filterNot { it.isEmpty }.forEach { page ->
                     PageText(page = page, showHeader = document.pages.size > 1)
                 }
@@ -185,7 +198,8 @@ private fun DocumentTextContentRecognizingPreview() {
             uiState = DocumentTextUiState.Recognizing,
             onCopyClick = {},
             onRetryClick = {},
-            onBackClick = {}
+            onBackClick = {},
+            onEnableModelClick = {}
         )
     }
 }
@@ -198,7 +212,8 @@ private fun DocumentTextContentPreview() {
             uiState = DocumentTextUiState.Content(previewDocument),
             onCopyClick = {},
             onRetryClick = {},
-            onBackClick = {}
+            onBackClick = {},
+            onEnableModelClick = {}
         )
     }
 }
@@ -211,7 +226,8 @@ private fun DocumentTextContentEmptyPreview() {
             uiState = DocumentTextUiState.Empty,
             onCopyClick = {},
             onRetryClick = {},
-            onBackClick = {}
+            onBackClick = {},
+            onEnableModelClick = {}
         )
     }
 }
@@ -224,7 +240,8 @@ private fun DocumentTextContentErrorPreview() {
             uiState = DocumentTextUiState.Error,
             onCopyClick = {},
             onRetryClick = {},
-            onBackClick = {}
+            onBackClick = {},
+            onEnableModelClick = {}
         )
     }
 }
