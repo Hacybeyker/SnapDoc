@@ -9,6 +9,9 @@
     <string name="library_no_matches">No document contains that.</string>
     <string name="library_delete">Delete</string>
     <string name="library_not_read">Not read yet — tap to extract its text</string>
+    <string name="library_share">Share PDF</string>
+    <string name="library_share_title">Share document</string>
+    <string name="library_export_failed">The PDF could not be created.</string>
 
     <plurals name="library_page_count">
         <item quantity="one">1 page</item>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Only the exports folder is shared, and nothing else. The scans themselves live in filesDir and
+    stay unreachable: the app's promise is that documents do not leave the device unless the user
+    deliberately sends one, and a provider that exposed the whole of internal storage would hand any
+    app holding a granted URI far more than the single PDF that was shared.
+-->
+<paths>
+    <cache-path
+        name="exports"
+        path="exports/" />
+</paths>

@@ -1,5 +1,6 @@
 package com.hacybeyker.snapdoc.feature.library.ui
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,16 +15,22 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hacybeyker.snapdoc.R
@@ -33,6 +40,7 @@ import com.hacybeyker.snapdoc.core.document.InsightSource
 import com.hacybeyker.snapdoc.core.ui.theme.SnapDocTheme
 import com.hacybeyker.snapdoc.core.ui.theme.spacing
 import com.hacybeyker.snapdoc.feature.library.domain.StoredDocument
+import java.io.File
 
 @Composable
 fun LibraryScreen(
@@ -41,25 +49,72 @@ fun LibraryScreen(
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LibraryEffects(viewModel = viewModel, snackbarHostState = snackbarHostState)
 
     LibraryContent(
         uiState = uiState,
         onQueryChange = { viewModel.onIntent(LibraryIntent.QueryChanged(it)) },
         onDeleteClick = { viewModel.onIntent(LibraryIntent.DeleteDocument(it)) },
+        onShareClick = { viewModel.onIntent(LibraryIntent.ExportDocument(it)) },
         onOpenDocument = onOpenDocument,
-        modifier = modifier
+        modifier = modifier,
+        snackbarHostState = snackbarHostState
     )
 }
+
+@Composable
+private fun LibraryEffects(viewModel: LibraryViewModel, snackbarHostState: SnackbarHostState) {
+    val context = LocalContext.current
+    val chooserTitle = stringResource(R.string.library_share_title)
+    val failedMessage = stringResource(R.string.library_export_failed)
+
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is LibraryEffect.SharePdf -> {
+                    // The URI comes from FileProvider, never from the raw path: a file:// URI would
+                    // be rejected outright since Android 7, and the temporary read grant on this one
+                    // is what lets the other app open the PDF without any access to the rest.
+                    //
+                    // The authority must match the manifest's "${applicationId}.fileprovider", which
+                    // resolves at build time to the same value packageName returns at runtime.
+                    val uri = FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}$FILE_PROVIDER_SUFFIX",
+                        File(effect.filePath)
+                    )
+                    val share = Intent(Intent.ACTION_SEND).apply {
+                        type = PDF_MIME_TYPE
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(Intent.createChooser(share, chooserTitle))
+                }
+
+                LibraryEffect.ExportFailed -> snackbarHostState.showSnackbar(failedMessage)
+            }
+        }
+    }
+}
+
+private const val PDF_MIME_TYPE = "application/pdf"
+
+/** Kept next to the intent that uses it, so the manifest's authority has one obvious counterpart. */
+private const val FILE_PROVIDER_SUFFIX = ".fileprovider"
 
 @Composable
 private fun LibraryContent(
     uiState: LibraryUiState,
     onQueryChange: (String) -> Unit,
     onDeleteClick: (Long) -> Unit,
+    onShareClick: (Long) -> Unit,
     onOpenDocument: (List<String>) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
-    Scaffold(modifier = modifier) { innerPadding ->
+    Scaffold(modifier = modifier, snackbarHost = { SnackbarHost(snackbarHostState) }) { innerPadding ->
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(MaterialTheme.spacing.md)) {
             OutlinedTextField(
                 value = uiState.query,
@@ -76,6 +131,7 @@ private fun LibraryContent(
                     else -> DocumentList(
                         documents = uiState.documents,
                         onDeleteClick = onDeleteClick,
+                        onShareClick = onShareClick,
                         onOpenDocument = onOpenDocument
                     )
                 }
@@ -88,6 +144,7 @@ private fun LibraryContent(
 private fun DocumentList(
     documents: List<StoredDocument>,
     onDeleteClick: (Long) -> Unit,
+    onShareClick: (Long) -> Unit,
     onOpenDocument: (List<String>) -> Unit
 ) {
     LazyColumn(
@@ -100,6 +157,7 @@ private fun DocumentList(
             DocumentRow(
                 document = document,
                 onDeleteClick = { onDeleteClick(document.id) },
+                onShareClick = { onShareClick(document.id) },
                 onClick = { onOpenDocument(document.imagePaths) }
             )
         }
@@ -107,7 +165,12 @@ private fun DocumentList(
 }
 
 @Composable
-private fun DocumentRow(document: StoredDocument, onDeleteClick: () -> Unit, onClick: () -> Unit) {
+private fun DocumentRow(
+    document: StoredDocument,
+    onDeleteClick: () -> Unit,
+    onShareClick: () -> Unit,
+    onClick: () -> Unit
+) {
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(MaterialTheme.spacing.md)) {
             Text(
@@ -132,6 +195,9 @@ private fun DocumentRow(document: StoredDocument, onDeleteClick: () -> Unit, onC
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 TextButton(onClick = onDeleteClick) {
                     Text(text = stringResource(R.string.library_delete))
+                }
+                TextButton(onClick = onShareClick) {
+                    Text(text = stringResource(R.string.library_share))
                 }
             }
         }
@@ -195,6 +261,7 @@ private fun LibraryContentPreview() {
             uiState = LibraryUiState(documents = previewDocuments, isLoading = false),
             onQueryChange = {},
             onDeleteClick = {},
+            onShareClick = {},
             onOpenDocument = {}
         )
     }
@@ -208,6 +275,7 @@ private fun LibraryContentEmptyPreview() {
             uiState = LibraryUiState(isLoading = false),
             onQueryChange = {},
             onDeleteClick = {},
+            onShareClick = {},
             onOpenDocument = {}
         )
     }
@@ -221,6 +289,7 @@ private fun LibraryContentNoMatchesPreview() {
             uiState = LibraryUiState(query = "plumber", isLoading = false),
             onQueryChange = {},
             onDeleteClick = {},
+            onShareClick = {},
             onOpenDocument = {}
         )
     }

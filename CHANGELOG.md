@@ -8,6 +8,7 @@
 ## [Unreleased]
 
 ### ✨ Added
+- Export a scan to PDF and share it: every page is drawn onto an A4 sheet, scaled to fit and centred, and handed to any app through a `FileProvider` URI with a temporary read grant. The file is named after what the document is and when it was taken — `receipt_hardware-store_20260820_1330.pdf` — so it is recognizable in an inbox
 - Document archive with full-text search as its own `feature/library` slice: every scan that yields readable text is kept in Room together with its OCR text and what the app understood from it, and the library screen searches the recognized text itself — so a receipt is found by typing the shop that printed it. Search runs over an external-content FTS4 index, which keeps the index out of the row rather than storing the page text twice
 - A scan enters the archive the moment the camera produces it, not once someone opens it: capturing a photo or finishing a guided scan is enough. Reading it later fills in the text and the insight on the same entry, and the library says which scans have not been read yet
 - A scan is identified by the pages it is made of, so reading the same scan again updates its entry instead of duplicating it — which is also how an insight upgraded by a newly downloaded model reaches the archive. The update preserves the entry's id and the time the scan was taken, so re-reading an old document does not jump it to the top of the archive
@@ -24,6 +25,7 @@
 - `CAMERA` permission and camera hardware feature declared in the manifest
 
 ### 🐛 Fixed
+- Sharing a PDF crashed with `Couldn't find meta-data for provider`: the FileProvider authority was built from a string whose `$` had been escaped away, so the literal text `${context.packageName}.fileprovider` was passed instead of the interpolated package name
 - A multi-page import that failed halfway left the pages it had already written on disk, unreachable and taking up internal storage forever — nothing references a page on its own, only a whole document. The import is now all-or-nothing: a failure deletes what that run wrote, and a delete that itself fails no longer replaces the error that caused the rollback
 
 ### ♻️ Changed
