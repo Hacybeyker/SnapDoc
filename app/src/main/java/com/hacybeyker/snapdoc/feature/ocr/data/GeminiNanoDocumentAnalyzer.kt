@@ -40,6 +40,11 @@ class GeminiNanoDocumentAnalyzer @Inject constructor(@IoDispatcher private val i
         }
     }
 
+    /**
+     * Deliberately without an `else`. The four branches cover the sealed hierarchy, so the compiler
+     * proves this exhaustive today — and if a future beta of `genai-common` adds a download state,
+     * the build breaks here instead of quietly reporting it as "in progress, 0 bytes".
+     */
     override fun download(): Flow<ModelDownload> = generativeModel.download()
         .map { status ->
             when (status) {
@@ -47,7 +52,6 @@ class GeminiNanoDocumentAnalyzer @Inject constructor(@IoDispatcher private val i
                 is DownloadStatus.DownloadProgress -> ModelDownload.InProgress(status.totalBytesDownloaded)
                 DownloadStatus.DownloadCompleted -> ModelDownload.Completed
                 is DownloadStatus.DownloadFailed -> ModelDownload.Failed(status.e)
-                else -> ModelDownload.InProgress(bytesDownloaded = 0)
             }
         }
         .flowOn(ioDispatcher)
