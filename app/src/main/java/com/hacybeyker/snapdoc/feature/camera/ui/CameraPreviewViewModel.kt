@@ -117,11 +117,13 @@ class CameraPreviewViewModel @Inject constructor(
             runCatching { importScannedPagesUseCase(intent.pageUris, intent.scannedAtEpochMillis) }
                 .onSuccess { document ->
                     // lastPhoto is cleared so the two never coexist: whichever the user produced
-                    // last is the one the status line describes and "Extract text" acts on.
+                    // last is the one the state describes and the reader is handed.
                     updateReady {
                         it.copy(isScanning = false, lastScan = document, lastPhoto = null, captureError = null)
                     }
-                    archive(document.pages.map { page -> page.filePath }, intent.scannedAtEpochMillis)
+                    val imagePaths = document.pages.map { page -> page.filePath }
+                    archive(imagePaths, intent.scannedAtEpochMillis)
+                    handOver(imagePaths)
                 }
                 .onFailure {
                     updateReady {
@@ -139,6 +141,7 @@ class CameraPreviewViewModel @Inject constructor(
                         it.copy(isCapturing = false, lastPhoto = photo, lastScan = null, captureError = null)
                     }
                     archive(listOf(photo.filePath), photo.capturedAtEpochMillis)
+                    handOver(listOf(photo.filePath))
                 }
                 .onFailure {
                     updateReady {
@@ -162,6 +165,15 @@ class CameraPreviewViewModel @Inject constructor(
                 createdAtEpochMillis = createdAtEpochMillis
             )
         }
+    }
+
+    /**
+     * Leaving the camera ends this ViewModel, so this is deliberately the last thing either capture
+     * path does: emitting before [archive] had returned would cancel the write half way and lose the
+     * document from the library.
+     */
+    private fun handOver(imagePaths: List<String>) {
+        _effects.trySend(CameraPreviewEffect.PagesReady(imagePaths))
     }
 
     private fun updateReady(transform: (CameraPreviewUiState.Ready) -> CameraPreviewUiState.Ready) {

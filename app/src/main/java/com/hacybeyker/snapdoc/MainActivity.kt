@@ -5,8 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import com.hacybeyker.snapdoc.core.ui.theme.SnapDocTheme
 import com.hacybeyker.snapdoc.navigation.AppNavHost
@@ -19,9 +17,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SnapDocTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    AppNavHost(modifier = Modifier.padding(paddingValues = innerPadding))
-                }
+                // No Scaffold here on purpose. Every destination already owns one (or, for the camera,
+                // handles insets itself), and wrapping them in a second one applied the system-bar
+                // padding twice: doubled gutters everywhere, and a viewfinder letterboxed between two
+                // black bars instead of filling the screen.
+                AppNavHost(modifier = Modifier.fillMaxSize())
             }
         }
     }

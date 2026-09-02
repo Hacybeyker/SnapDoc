@@ -173,7 +173,11 @@ private fun analyzeFrame(recognizer: TextRecognizer, imageProxy: ImageProxy, onR
 }
 
 @Composable
-internal fun CameraPreviewEffects(viewModel: CameraPreviewViewModel, imageCapture: ImageCapture) {
+internal fun CameraPreviewEffects(
+    viewModel: CameraPreviewViewModel,
+    imageCapture: ImageCapture,
+    onPagesReady: (List<String>) -> Unit
+) {
     val context = LocalContext.current
     val activity = LocalActivity.current
 
@@ -215,6 +219,8 @@ internal fun CameraPreviewEffects(viewModel: CameraPreviewViewModel, imageCaptur
                         }
                     }
                 )
+
+                is CameraPreviewEffect.PagesReady -> onPagesReady(effect.imagePaths)
             }
         }
     }

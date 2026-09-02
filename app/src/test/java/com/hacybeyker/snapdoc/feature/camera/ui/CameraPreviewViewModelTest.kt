@@ -398,4 +398,47 @@ class CameraPreviewViewModelTest {
 
         assertEquals(emptyList<Any>(), archive.observeAll().first())
     }
+
+    @Test
+    fun `a captured photo hands itself to the reader`() = runTest(mainDispatcherRule.testDispatcher) {
+        val sut = viewModel()
+        sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+
+        sut.onIntent(CameraPreviewIntent.PhotoCaptured(byteArrayOf(1), 1_787_250_612_345))
+        advanceUntilIdle()
+
+        sut.effects.test {
+            val expected = CameraPreviewEffect.PagesReady(listOf("/fake/scans/scan_20260820_133012_345.jpg"))
+            assertEquals(expected, awaitItem())
+        }
+    }
+
+    @Test
+    fun `a finished scan hands every page to the reader`() = runTest(mainDispatcherRule.testDispatcher) {
+        val sut = viewModel()
+        sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+
+        sut.onIntent(
+            CameraPreviewIntent.PagesScanned(listOf("content://scan/1", "content://scan/2"), 1_787_250_612_345)
+        )
+        advanceUntilIdle()
+
+        sut.effects.test {
+            val expected = CameraPreviewEffect.PagesReady(
+                listOf("/fake/scans/scan_20260820_133012_345_p1.jpg", "/fake/scans/scan_20260820_133012_345_p2.jpg")
+            )
+            assertEquals(expected, awaitItem())
+        }
+    }
+
+    @Test
+    fun `a capture that failed keeps the user on the camera`() = runTest(mainDispatcherRule.testDispatcher) {
+        val sut = viewModel(storageFailure = IOException("disk full"))
+        sut.onIntent(CameraPreviewIntent.ViewfinderReady)
+
+        sut.onIntent(CameraPreviewIntent.PhotoCaptured(byteArrayOf(1), 0))
+        advanceUntilIdle()
+
+        sut.effects.test { expectNoEvents() }
+    }
 }

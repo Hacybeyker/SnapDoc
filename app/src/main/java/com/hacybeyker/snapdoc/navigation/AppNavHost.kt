@@ -27,15 +27,23 @@ fun AppNavHost(modifier: Modifier = Modifier) {
             entry<Home> {
                 HomeScreen(
                     onScanClick = { backStack.add(Camera) },
-                    onLibraryClick = { backStack.add(Library) }
+                    onLibraryClick = { backStack.add(Library) },
+                    onOpenDocument = { paths -> backStack.add(DocumentText(paths)) }
                 )
             }
             entry<Library> {
-                LibraryScreen(onOpenDocument = { paths -> backStack.add(DocumentText(paths)) })
+                LibraryScreen(
+                    onOpenDocument = { paths -> backStack.add(DocumentText(paths)) },
+                    onBack = { backStack.removeLastOrNull() }
+                )
             }
             entry<Camera> {
                 CameraPermissionScreen(
-                    onExtractText = { imagePaths -> backStack.add(DocumentText(imagePaths)) }
+                    onBack = { backStack.removeLastOrNull() },
+                    // The camera is replaced rather than stacked on: once it has produced pages its
+                    // job is over, so Back from the reader returns Home instead of a viewfinder
+                    // aimed at a document the user has already scanned.
+                    onPagesReady = { imagePaths -> backStack[backStack.lastIndex] = DocumentText(imagePaths) }
                 )
             }
             entry<DocumentText> { key ->

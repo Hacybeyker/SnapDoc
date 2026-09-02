@@ -5,16 +5,20 @@ import android.content.ClipboardManager
 import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -27,12 +31,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hacybeyker.snapdoc.R
+import com.hacybeyker.snapdoc.core.document.DocumentInsight
+import com.hacybeyker.snapdoc.core.document.DocumentKind
+import com.hacybeyker.snapdoc.core.document.InsightSource
+import com.hacybeyker.snapdoc.core.ui.components.AppTopBar
+import com.hacybeyker.snapdoc.core.ui.components.EmptyState
+import com.hacybeyker.snapdoc.core.ui.components.HorizontalSpacer
+import com.hacybeyker.snapdoc.core.ui.components.Spacer
 import com.hacybeyker.snapdoc.core.ui.theme.SnapDocTheme
 import com.hacybeyker.snapdoc.core.ui.theme.spacing
 import com.hacybeyker.snapdoc.feature.ocr.domain.RecognizedDocument
@@ -99,31 +110,40 @@ private fun DocumentTextContent(
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
+    val pageCount = (uiState as? DocumentTextUiState.Content)?.document?.pages?.size
     Scaffold(modifier = modifier, snackbarHost = { SnackbarHost(snackbarHostState) }) { innerPadding ->
-        Box(
-            modifier = Modifier.fillMaxSize().padding(innerPadding).padding(MaterialTheme.spacing.lg),
-            contentAlignment = Alignment.Center
-        ) {
-            when (uiState) {
-                DocumentTextUiState.Recognizing -> CircularProgressIndicator()
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            AppTopBar(
+                title = stringResource(R.string.document_text_title),
+                subtitle = pageCount?.let { pluralStringResource(R.plurals.library_page_count, it, it) },
+                onBack = onBackClick
+            )
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                when (uiState) {
+                    DocumentTextUiState.Recognizing -> CircularProgressIndicator()
 
-                is DocumentTextUiState.Content -> RecognizedTextPages(
-                    uiState = uiState,
-                    onCopyClick = onCopyClick,
-                    onEnableModelClick = onEnableModelClick
-                )
+                    is DocumentTextUiState.Content -> RecognizedTextPages(
+                        uiState = uiState,
+                        onCopyClick = onCopyClick,
+                        onEnableModelClick = onEnableModelClick
+                    )
 
-                DocumentTextUiState.Empty -> MessageWithAction(
-                    message = stringResource(R.string.document_text_empty),
-                    actionLabel = stringResource(R.string.document_text_back),
-                    onActionClick = onBackClick
-                )
+                    DocumentTextUiState.Empty -> EmptyState(
+                        icon = Icons.Filled.Info,
+                        title = stringResource(R.string.document_text_empty_title),
+                        message = stringResource(R.string.document_text_empty),
+                        actionLabel = stringResource(R.string.document_text_back),
+                        onAction = onBackClick
+                    )
 
-                DocumentTextUiState.Error -> MessageWithAction(
-                    message = stringResource(R.string.document_text_failed),
-                    actionLabel = stringResource(R.string.document_text_retry),
-                    onActionClick = onRetryClick
-                )
+                    DocumentTextUiState.Error -> EmptyState(
+                        icon = Icons.Filled.Warning,
+                        title = stringResource(R.string.document_text_failed_title),
+                        message = stringResource(R.string.document_text_failed),
+                        actionLabel = stringResource(R.string.document_text_retry),
+                        onAction = onRetryClick
+                    )
+                }
             }
         }
     }
@@ -136,25 +156,29 @@ private fun RecognizedTextPages(
     onEnableModelClick: () -> Unit
 ) {
     val document = uiState.document
-    Column(modifier = Modifier.fillMaxSize()) {
-        Text(
-            text = stringResource(R.string.document_text_title),
-            style = MaterialTheme.typography.headlineSmall
-        )
-        Spacer(Modifier.height(MaterialTheme.spacing.md))
-        // Selectable so the user can lift a single line out without copying the whole document.
-        SelectionContainer(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-            Column {
-                InsightCard(insight = uiState.insight)
-                ModelStatusRow(modelStatus = uiState.modelStatus, onEnableModelClick = onEnableModelClick)
-                Spacer(Modifier.height(MaterialTheme.spacing.md))
-                document.pages.filterNot { it.isEmpty }.forEach { page ->
-                    PageText(page = page, showHeader = document.pages.size > 1)
+    Column(modifier = Modifier.fillMaxSize().padding(horizontal = MaterialTheme.spacing.md)) {
+        Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            InsightCard(insight = uiState.insight)
+            ModelStatusRow(modelStatus = uiState.modelStatus, onEnableModelClick = onEnableModelClick)
+            Spacer(MaterialTheme.spacing.md)
+            Card(modifier = Modifier.fillMaxWidth()) {
+                // Selectable so the user can lift a single line out without copying the whole document.
+                SelectionContainer {
+                    Column(modifier = Modifier.padding(MaterialTheme.spacing.md)) {
+                        document.pages.filterNot { it.isEmpty }.forEach { page ->
+                            PageText(page = page, showHeader = document.pages.size > 1)
+                        }
+                    }
                 }
             }
+            Spacer(MaterialTheme.spacing.md)
         }
-        Spacer(Modifier.height(MaterialTheme.spacing.md))
-        Button(onClick = onCopyClick, modifier = Modifier.fillMaxWidth()) {
+        Button(
+            onClick = onCopyClick,
+            modifier = Modifier.fillMaxWidth().padding(bottom = MaterialTheme.spacing.md)
+        ) {
+            Icon(imageVector = Icons.Filled.Send, contentDescription = null)
+            HorizontalSpacer(MaterialTheme.spacing.sm)
             Text(text = stringResource(R.string.document_text_copy))
         }
     }
@@ -168,48 +192,32 @@ private fun PageText(page: RecognizedPage, showHeader: Boolean) {
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary
         )
-        Spacer(Modifier.height(MaterialTheme.spacing.xs))
+        Spacer(MaterialTheme.spacing.xs)
     }
     Text(text = page.text, style = MaterialTheme.typography.bodyMedium)
-    Spacer(Modifier.height(MaterialTheme.spacing.md))
-}
-
-@Composable
-private fun MessageWithAction(message: String, actionLabel: String, onActionClick: () -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(MaterialTheme.spacing.md))
-        Button(onClick = onActionClick) { Text(text = actionLabel) }
-    }
+    Spacer(MaterialTheme.spacing.md)
 }
 
 private val previewDocument = RecognizedDocument(
     pages = listOf(
-        RecognizedPage(pageNumber = 1, blocks = listOf("HARDWARE STORE", "Hammer  12.90\nNails   3.40", "TOTAL 16.30")),
-        RecognizedPage(pageNumber = 2, blocks = listOf("Thank you for your purchase"))
+        RecognizedPage(pageNumber = 1, blocks = listOf("HARDWARE STORE", "Hammer  12.90\nNails   3.40", "TOTAL 16.30"))
     )
 )
 
-@Preview(showBackground = true)
-@Composable
-private fun DocumentTextContentRecognizingPreview() {
-    SnapDocTheme {
-        DocumentTextContent(
-            uiState = DocumentTextUiState.Recognizing,
-            onCopyClick = {},
-            onRetryClick = {},
-            onBackClick = {},
-            onEnableModelClick = {}
-        )
-    }
-}
+private val previewInsight = DocumentInsight(
+    kind = DocumentKind.Receipt,
+    merchant = "Hardware Store",
+    date = "2026-08-20",
+    total = "16.30",
+    source = InsightSource.OnDeviceModel
+)
 
 @Preview(showBackground = true)
 @Composable
 private fun DocumentTextContentPreview() {
     SnapDocTheme {
         DocumentTextContent(
-            uiState = DocumentTextUiState.Content(previewDocument),
+            uiState = DocumentTextUiState.Content(previewDocument, previewInsight),
             onCopyClick = {},
             onRetryClick = {},
             onBackClick = {},
@@ -224,20 +232,6 @@ private fun DocumentTextContentEmptyPreview() {
     SnapDocTheme {
         DocumentTextContent(
             uiState = DocumentTextUiState.Empty,
-            onCopyClick = {},
-            onRetryClick = {},
-            onBackClick = {},
-            onEnableModelClick = {}
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun DocumentTextContentErrorPreview() {
-    SnapDocTheme {
-        DocumentTextContent(
-            uiState = DocumentTextUiState.Error,
             onCopyClick = {},
             onRetryClick = {},
             onBackClick = {},

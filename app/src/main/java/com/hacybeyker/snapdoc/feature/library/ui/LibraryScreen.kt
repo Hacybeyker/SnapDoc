@@ -4,21 +4,29 @@ import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -37,6 +44,13 @@ import com.hacybeyker.snapdoc.R
 import com.hacybeyker.snapdoc.core.document.DocumentInsight
 import com.hacybeyker.snapdoc.core.document.DocumentKind
 import com.hacybeyker.snapdoc.core.document.InsightSource
+import com.hacybeyker.snapdoc.core.ui.components.AppTopBar
+import com.hacybeyker.snapdoc.core.ui.components.DocumentKindBadge
+import com.hacybeyker.snapdoc.core.ui.components.EmptyState
+import com.hacybeyker.snapdoc.core.ui.components.HorizontalSpacer
+import com.hacybeyker.snapdoc.core.ui.components.LabelChip
+import com.hacybeyker.snapdoc.core.ui.components.Spacer
+import com.hacybeyker.snapdoc.core.ui.components.labelRes
 import com.hacybeyker.snapdoc.core.ui.theme.SnapDocTheme
 import com.hacybeyker.snapdoc.core.ui.theme.spacing
 import com.hacybeyker.snapdoc.feature.library.domain.StoredDocument
@@ -45,6 +59,7 @@ import java.io.File
 @Composable
 fun LibraryScreen(
     onOpenDocument: (List<String>) -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
@@ -59,6 +74,7 @@ fun LibraryScreen(
         onDeleteClick = { viewModel.onIntent(LibraryIntent.DeleteDocument(it)) },
         onShareClick = { viewModel.onIntent(LibraryIntent.ExportDocument(it)) },
         onOpenDocument = onOpenDocument,
+        onBack = onBack,
         modifier = modifier,
         snackbarHostState = snackbarHostState
     )
@@ -111,23 +127,40 @@ private fun LibraryContent(
     onDeleteClick: (Long) -> Unit,
     onShareClick: (Long) -> Unit,
     onOpenDocument: (List<String>) -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     Scaffold(modifier = modifier, snackbarHost = { SnackbarHost(snackbarHostState) }) { innerPadding ->
-        Column(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(MaterialTheme.spacing.md)) {
-            OutlinedTextField(
-                value = uiState.query,
-                onValueChange = onQueryChange,
-                label = { Text(text = stringResource(R.string.library_search_label)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            AppTopBar(
+                title = stringResource(R.string.library_title),
+                subtitle = stringResource(R.string.library_subtitle),
+                onBack = onBack
+            )
+            SearchField(
+                query = uiState.query,
+                onQueryChange = onQueryChange,
+                modifier = Modifier.padding(horizontal = MaterialTheme.spacing.md)
             )
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 when {
                     uiState.isLoading -> CircularProgressIndicator()
-                    uiState.isEmptyArchive -> CenteredMessage(stringResource(R.string.library_empty))
-                    uiState.hasNoMatches -> CenteredMessage(stringResource(R.string.library_no_matches))
+
+                    uiState.isEmptyArchive -> EmptyState(
+                        icon = Icons.Filled.List,
+                        title = stringResource(R.string.library_empty_title),
+                        message = stringResource(R.string.library_empty)
+                    )
+
+                    uiState.hasNoMatches -> EmptyState(
+                        icon = Icons.Filled.Search,
+                        title = stringResource(R.string.library_no_matches_title),
+                        message = stringResource(R.string.library_no_matches),
+                        actionLabel = stringResource(R.string.library_clear_search),
+                        onAction = { onQueryChange("") }
+                    )
+
                     else -> DocumentList(
                         documents = uiState.documents,
                         onDeleteClick = onDeleteClick,
@@ -141,6 +174,30 @@ private fun LibraryContent(
 }
 
 @Composable
+private fun SearchField(query: String, onQueryChange: (String) -> Unit, modifier: Modifier = Modifier) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        placeholder = { Text(text = stringResource(R.string.library_search_label)) },
+        leadingIcon = { Icon(imageVector = Icons.Filled.Search, contentDescription = null) },
+        trailingIcon = {
+            // Only offered when there is something to clear, so the field is not permanently cluttered.
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(
+                        imageVector = Icons.Filled.Clear,
+                        contentDescription = stringResource(R.string.library_clear_search)
+                    )
+                }
+            }
+        },
+        singleLine = true,
+        shape = MaterialTheme.shapes.large,
+        modifier = modifier.fillMaxWidth()
+    )
+}
+
+@Composable
 private fun DocumentList(
     documents: List<StoredDocument>,
     onDeleteClick: (Long) -> Unit,
@@ -150,7 +207,7 @@ private fun DocumentList(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.sm),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = MaterialTheme.spacing.md)
+        contentPadding = PaddingValues(MaterialTheme.spacing.md)
     ) {
         // Keyed by id so deleting one row does not recompose every row below it.
         items(items = documents, key = { it.id }) { document ->
@@ -172,63 +229,60 @@ private fun DocumentRow(
     onClick: () -> Unit
 ) {
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(MaterialTheme.spacing.md)) {
-            Text(
-                text = stringResource(document.insight.kind.labelRes),
-                style = MaterialTheme.typography.titleMedium
-            )
-            document.insight.merchant?.let {
-                Text(text = it, style = MaterialTheme.typography.bodyMedium)
-            }
-            if (!document.hasBeenRead) {
+        Row(
+            modifier = Modifier.padding(MaterialTheme.spacing.md),
+            verticalAlignment = Alignment.Top
+        ) {
+            DocumentKindBadge(kind = document.insight.kind)
+            HorizontalSpacer(MaterialTheme.spacing.md)
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(R.string.library_not_read),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
+                    text = document.insight.merchant ?: stringResource(document.insight.kind.labelRes),
+                    style = MaterialTheme.typography.titleSmall
+                )
+                Spacer(MaterialTheme.spacing.xs)
+                DocumentMeta(document = document)
+            }
+            // Icon buttons, not text: two labelled buttons per row turned the list into a wall of words.
+            IconButton(onClick = onShareClick) {
+                Icon(
+                    imageVector = Icons.Filled.Share,
+                    contentDescription = stringResource(R.string.library_share)
                 )
             }
-            Text(
-                text = document.summaryLine(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = onDeleteClick) {
-                    Text(text = stringResource(R.string.library_delete))
-                }
-                TextButton(onClick = onShareClick) {
-                    Text(text = stringResource(R.string.library_share))
-                }
+            IconButton(onClick = onDeleteClick) {
+                Icon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = stringResource(R.string.library_delete),
+                    tint = MaterialTheme.colorScheme.error
+                )
             }
         }
     }
 }
 
-/** Whatever the document actually has: a total and a date are both optional on a real scan. */
 @Composable
-private fun StoredDocument.summaryLine(): String {
-    val pages = pluralStringResource(R.plurals.library_page_count, pageCount, pageCount)
-    return listOfNotNull(insight.total, insight.date, pages).joinToString(separator = " · ")
-}
-
-@Composable
-private fun CenteredMessage(message: String) {
-    Text(
-        text = message,
-        style = MaterialTheme.typography.bodyLarge,
-        textAlign = TextAlign.Center,
-        modifier = Modifier.padding(MaterialTheme.spacing.lg)
-    )
-}
-
-private val DocumentKind.labelRes: Int
-    get() = when (this) {
-        DocumentKind.Receipt -> R.string.document_kind_receipt
-        DocumentKind.Invoice -> R.string.document_kind_invoice
-        DocumentKind.IdDocument -> R.string.document_kind_id
-        DocumentKind.Note -> R.string.document_kind_note
-        DocumentKind.Unknown -> R.string.document_kind_unknown
+private fun DocumentMeta(document: StoredDocument) {
+    Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)) {
+        document.insight.total?.let {
+            LabelChip(
+                text = it,
+                container = MaterialTheme.colorScheme.primaryContainer,
+                content = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+        document.insight.date?.let { LabelChip(text = it) }
+        LabelChip(text = pluralStringResource(R.plurals.library_page_count, document.pageCount, document.pageCount))
     }
+    if (!document.hasBeenRead) {
+        Spacer(MaterialTheme.spacing.xs)
+        Text(
+            text = stringResource(R.string.library_not_read),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+}
 
 private val previewDocuments = listOf(
     StoredDocument(
@@ -248,7 +302,7 @@ private val previewDocuments = listOf(
         id = 2,
         imagePaths = listOf("/scans/b_p1.jpg"),
         createdAtEpochMillis = 1_787_150_612_345,
-        text = "Remember to call the plumber",
+        text = "",
         insight = DocumentInsight.empty(InsightSource.Rules)
     )
 )
@@ -262,7 +316,8 @@ private fun LibraryContentPreview() {
             onQueryChange = {},
             onDeleteClick = {},
             onShareClick = {},
-            onOpenDocument = {}
+            onOpenDocument = {},
+            onBack = {}
         )
     }
 }
@@ -276,7 +331,8 @@ private fun LibraryContentEmptyPreview() {
             onQueryChange = {},
             onDeleteClick = {},
             onShareClick = {},
-            onOpenDocument = {}
+            onOpenDocument = {},
+            onBack = {}
         )
     }
 }
@@ -290,7 +346,8 @@ private fun LibraryContentNoMatchesPreview() {
             onQueryChange = {},
             onDeleteClick = {},
             onShareClick = {},
-            onOpenDocument = {}
+            onOpenDocument = {},
+            onBack = {}
         )
     }
 }

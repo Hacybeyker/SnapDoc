@@ -1,79 +1,94 @@
 <resources>
     <string name="app_name">SnapDoc</string>
+    <string name="action_back">Back</string>
 
-    <string name="home_scan_action">Scan</string>
-    <string name="home_library_action">My documents</string>
+    <!-- Home -->
+    <string name="home_tagline">Scan a document and the app reads it for you.</string>
+    <string name="home_privacy_note">Nothing leaves your phone</string>
+    <string name="home_scan_action">Scan a document</string>
+    <string name="home_scan_description">Crops it, straightens it and pulls out the text</string>
+    <string name="home_recent_title">Recent</string>
+    <string name="home_see_all">See all</string>
+    <string name="home_recent_empty">Nothing scanned yet. Your documents will appear here.</string>
+    <string name="home_recent_loading">Looking for your documents…</string>
 
-    <string name="library_search_label">Search your documents</string>
-    <string name="library_empty">Nothing scanned yet. Your documents will show up here.</string>
-    <string name="library_no_matches">No document contains that.</string>
-    <string name="library_delete">Delete</string>
-    <string name="library_not_read">Not read yet — tap to extract its text</string>
-    <string name="library_share">Share PDF</string>
-    <string name="library_share_title">Share document</string>
-    <string name="library_export_failed">The PDF could not be created.</string>
-
-    <plurals name="library_page_count">
-        <item quantity="one">1 page</item>
-        <item quantity="other">%1$d pages</item>
-    </plurals>
-
+    <!-- Camera permission -->
     <string name="camera_permission_rationale_title">SnapDoc needs the camera</string>
-    <string name="camera_permission_rationale_message">SnapDoc uses your device\'s camera to scan documents. All processing happens on your phone.</string>
+    <string name="camera_permission_rationale_message">It is how you scan a document. The images are processed on your phone and never uploaded.</string>
     <string name="camera_permission_allow">Allow camera</string>
-    <string name="camera_permission_denied_title">Camera disabled</string>
-    <string name="camera_permission_denied_message">You denied camera access. Enable it from the app settings to scan documents.</string>
+    <string name="camera_permission_denied_title">Camera access is off</string>
+    <string name="camera_permission_denied_message">SnapDoc cannot scan without it. You can turn it back on from the app settings.</string>
     <string name="camera_permission_open_settings">Open settings</string>
 
-    <string name="camera_preview_shutter">Capture</string>
-    <string name="camera_preview_unavailable">The camera could not be started on this device.</string>
+    <!-- Camera -->
+    <string name="camera_title">Scan</string>
+    <string name="camera_scan_action">Scan document</string>
+    <string name="camera_scan_caption">Finds the page edges, straightens it, and takes several pages in one go</string>
+    <string name="camera_photo_action">Or just take a photo</string>
+    <string name="camera_live_searching">Point at a document</string>
+    <string name="camera_live_no_text">No text in view</string>
+    <string name="camera_live_off">Text detection off</string>
+    <string name="camera_live_turn_on">Turn text detection on</string>
+    <string name="camera_live_turn_off">Turn text detection off</string>
+    <string name="camera_starting">Starting the camera…</string>
+    <string name="camera_preview_unavailable_title">The camera will not start</string>
+    <string name="camera_preview_unavailable">It could not be opened on this device.</string>
     <string name="camera_preview_capture_failed">The camera could not take the photo. Try again.</string>
     <string name="camera_preview_save_failed">The photo was taken but could not be saved.</string>
-    <string name="camera_preview_photo_saved">Saved as %1$s</string>
-    <string name="camera_preview_scan_document">Scan document</string>
-    <string name="camera_preview_scanner_unavailable">The document scanner is not available on this device.</string>
+    <string name="camera_preview_scanner_unavailable">The guided scanner is not available on this device.</string>
 
-    <string name="camera_preview_extract_text">Extract text</string>
-    <string name="camera_preview_live_searching">Looking for text…</string>
-    <string name="camera_preview_live_no_text">No text in view</string>
-    <string name="camera_preview_live_off">Live text off</string>
-    <string name="camera_preview_live_turn_on">Turn on</string>
-    <string name="camera_preview_live_turn_off">Turn off</string>
+    <plurals name="camera_live_text_visible">
+        <item quantity="one">1 text block in view</item>
+        <item quantity="other">%1$d text blocks in view</item>
+    </plurals>
 
-    <string name="document_text_title">Recognized text</string>
+    <!-- Document reader -->
+    <string name="document_text_title">Document</string>
     <string name="document_text_page">Page %1$d</string>
-    <string name="document_text_copy">Copy text</string>
+    <string name="document_text_copy">Copy the text</string>
     <string name="document_text_clip_label">Scanned document text</string>
     <string name="document_text_copied">Text copied</string>
-    <string name="document_text_empty">No readable text was found in this document.</string>
-    <string name="document_text_failed">The text could not be read from this document.</string>
+    <string name="document_text_empty_title">No text found</string>
+    <string name="document_text_empty">There was nothing readable on this page. A sharper, better-lit shot usually fixes it.</string>
+    <string name="document_text_failed_title">Could not read it</string>
+    <string name="document_text_failed">Something went wrong reading this document.</string>
     <string name="document_text_retry">Try again</string>
-    <string name="document_text_back">Back</string>
+    <string name="document_text_back">Go back</string>
 
     <string name="document_kind_receipt">Receipt</string>
     <string name="document_kind_invoice">Invoice</string>
     <string name="document_kind_id">ID document</string>
     <string name="document_kind_note">Note</string>
-    <string name="document_kind_unknown">Unrecognized document</string>
+    <string name="document_kind_unknown">Document</string>
 
-    <string name="document_insight_analyzing">Reading the document…</string>
-    <string name="document_insight_merchant">From: %1$s</string>
-    <string name="document_insight_date">Date: %1$s</string>
-    <string name="document_insight_total">Total: %1$s</string>
-    <string name="document_insight_no_fields">No details could be picked out of this document.</string>
-    <string name="document_insight_by_model">Read on this device by Gemini Nano</string>
-    <string name="document_insight_by_rules">Read with text rules — no AI model on this device</string>
-    <string name="document_insight_enable_model">Enable on-device AI for better results</string>
+    <string name="document_insight_analyzing">Working out what this is…</string>
+    <string name="document_insight_merchant">From</string>
+    <string name="document_insight_date">Date</string>
+    <string name="document_insight_total">Total</string>
+    <string name="document_insight_no_fields">No details could be picked out of this one.</string>
+    <string name="document_insight_by_model">Read by Gemini Nano, on this phone</string>
+    <string name="document_insight_by_rules">Read with text rules</string>
+    <string name="document_insight_enable_model">Turn on on-device AI for better results</string>
     <string name="document_insight_downloading">Downloading the AI model… %1$d MB</string>
-    <string name="document_insight_download_failed">The model could not be downloaded. Tap to retry.</string>
+    <string name="document_insight_download_failed">Download failed. Tap to retry.</string>
 
-    <plurals name="camera_preview_pages_scanned">
-        <item quantity="one">1 page scanned and saved</item>
-        <item quantity="other">%1$d pages scanned and saved</item>
-    </plurals>
+    <!-- Library -->
+    <string name="library_title">My documents</string>
+    <string name="library_subtitle">Search them by what is written inside</string>
+    <string name="library_search_label">Search your documents</string>
+    <string name="library_clear_search">Clear search</string>
+    <string name="library_empty_title">No documents yet</string>
+    <string name="library_empty">Everything you scan is kept here, and you can search it by its contents.</string>
+    <string name="library_no_matches_title">Nothing matches</string>
+    <string name="library_no_matches">No document contains that. Try a shorter word.</string>
+    <string name="library_not_read">Not read yet — tap to pull out its text</string>
+    <string name="library_share">Share as PDF</string>
+    <string name="library_share_title">Share document</string>
+    <string name="library_export_failed">The PDF could not be created.</string>
+    <string name="library_delete">Delete</string>
 
-    <plurals name="camera_preview_live_text_visible">
-        <item quantity="one">1 text block in view</item>
-        <item quantity="other">%1$d text blocks in view</item>
+    <plurals name="library_page_count">
+        <item quantity="one">1 page</item>
+        <item quantity="other">%1$d pages</item>
     </plurals>
 </resources>

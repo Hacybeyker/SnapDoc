@@ -9,14 +9,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,20 +23,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hacybeyker.snapdoc.R
+import com.hacybeyker.snapdoc.core.ui.components.AppTopBar
+import com.hacybeyker.snapdoc.core.ui.components.EmptyState
 import com.hacybeyker.snapdoc.core.ui.theme.SnapDocTheme
-import com.hacybeyker.snapdoc.core.ui.theme.spacing
 
 @Composable
 fun CameraPermissionScreen(
     modifier: Modifier = Modifier,
-    onExtractText: (List<String>) -> Unit = {},
+    onBack: () -> Unit = {},
+    onPagesReady: (List<String>) -> Unit = {},
     viewModel: CameraPermissionViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -76,7 +76,8 @@ fun CameraPermissionScreen(
         uiState = uiState,
         onRequestPermission = { viewModel.onIntent(CameraPermissionIntent.RequestPermission) },
         onOpenSettings = { viewModel.onIntent(CameraPermissionIntent.OpenAppSettings) },
-        grantedContent = { CameraPreviewScreen(onExtractText = onExtractText) },
+        onBack = onBack,
+        grantedContent = { CameraPreviewScreen(onBack = onBack, onPagesReady = onPagesReady) },
         modifier = modifier
     )
 }
@@ -86,48 +87,57 @@ private fun CameraPermissionContent(
     uiState: CameraPermissionUiState,
     onRequestPermission: () -> Unit,
     onOpenSettings: () -> Unit,
+    onBack: () -> Unit,
     grantedContent: @Composable () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        when (uiState) {
-            CameraPermissionUiState.Checking ->
-                CircularProgressIndicator()
+    when (uiState) {
+        // A slot, so this Content stays stateless and previewable while the real screen plugs in the
+        // live camera. It is also the only state that runs edge to edge: the viewfinder fills the
+        // screen and insets its own controls, back button included.
+        CameraPermissionUiState.Granted -> grantedContent()
 
-            // A slot, so this Content stays stateless and previewable while the real screen
-            // plugs in the live camera.
-            CameraPermissionUiState.Granted -> grantedContent()
+        // Short-lived, but it still gets the header: without it the screen jumped from nothing to a
+        // titled page as soon as the system answered.
+        CameraPermissionUiState.Checking -> PermissionScreen(onBack = onBack, modifier = modifier) {
+            CircularProgressIndicator()
+        }
 
-            CameraPermissionUiState.RationaleRequired ->
-                PermissionMessage(
-                    title = stringResource(R.string.camera_permission_rationale_title),
-                    message = stringResource(R.string.camera_permission_rationale_message),
-                    buttonLabel = stringResource(R.string.camera_permission_allow),
-                    onButtonClick = onRequestPermission
-                )
+        CameraPermissionUiState.RationaleRequired -> PermissionScreen(onBack = onBack, modifier = modifier) {
+            EmptyState(
+                icon = Icons.Filled.Lock,
+                title = stringResource(R.string.camera_permission_rationale_title),
+                message = stringResource(R.string.camera_permission_rationale_message),
+                actionLabel = stringResource(R.string.camera_permission_allow),
+                onAction = onRequestPermission
+            )
+        }
 
-            CameraPermissionUiState.PermanentlyDenied ->
-                PermissionMessage(
-                    title = stringResource(R.string.camera_permission_denied_title),
-                    message = stringResource(R.string.camera_permission_denied_message),
-                    buttonLabel = stringResource(R.string.camera_permission_open_settings),
-                    onButtonClick = onOpenSettings
-                )
+        CameraPermissionUiState.PermanentlyDenied -> PermissionScreen(onBack = onBack, modifier = modifier) {
+            EmptyState(
+                icon = Icons.Filled.Settings,
+                title = stringResource(R.string.camera_permission_denied_title),
+                message = stringResource(R.string.camera_permission_denied_message),
+                actionLabel = stringResource(R.string.camera_permission_open_settings),
+                onAction = onOpenSettings
+            )
         }
     }
 }
 
+/**
+ * The states with no viewfinder are ordinary screens, so they are built like every other one: a
+ * `Scaffold` for the insets and the app header on top. Denying the permission used to leave a
+ * sentence and a button in the middle of the screen with no way out except the system gesture, which
+ * is the same trap as a modal with no close button.
+ */
 @Composable
-private fun PermissionMessage(title: String, message: String, buttonLabel: String, onButtonClick: () -> Unit) {
-    Column(
-        modifier = Modifier.padding(MaterialTheme.spacing.lg),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = title, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(MaterialTheme.spacing.sm))
-        Text(text = message, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(MaterialTheme.spacing.md))
-        Button(onClick = onButtonClick) { Text(buttonLabel) }
+private fun PermissionScreen(onBack: () -> Unit, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Scaffold(modifier = modifier) { innerPadding ->
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            AppTopBar(title = stringResource(R.string.camera_title), onBack = onBack)
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { content() }
+        }
     }
 }
 
@@ -139,6 +149,7 @@ private fun CameraPermissionContentRationalePreview() {
             uiState = CameraPermissionUiState.RationaleRequired,
             onRequestPermission = {},
             onOpenSettings = {},
+            onBack = {},
             grantedContent = {}
         )
     }
@@ -152,6 +163,7 @@ private fun CameraPermissionContentPermanentlyDeniedPreview() {
             uiState = CameraPermissionUiState.PermanentlyDenied,
             onRequestPermission = {},
             onOpenSettings = {},
+            onBack = {},
             grantedContent = {}
         )
     }
