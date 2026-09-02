@@ -40,7 +40,8 @@ android {
         compose = true
     }
     lint {
-        abortOnError = false
+        // The gate is only a gate if it can fail: a lint error breaks the build, warnings do not.
+        abortOnError = true
         warningsAsErrors = false
         checkDependencies = true
         checkReleaseBuilds = true
@@ -123,7 +124,7 @@ ktlint {
 
 tasks.register("codeQuality") {
     group = "verification"
-    description = "Ejecuta Android Lint + ktlint + detekt en un solo comando."
+    description = "Runs Android Lint + ktlint + detekt in a single command."
     dependsOn("ktlintCheck", "detekt", "lint")
 }
 
@@ -133,6 +134,6 @@ listOf("ktlintCheck", "detekt", "lint").forEach { check ->
 
 tasks.register("formatAndAnalyze") {
     group = "verification"
-    description = "Formatea el codigo (ktlintFormat) y luego verifica todo (ktlintCheck + detekt + lint)."
+    description = "Formats the code (ktlintFormat), then verifies everything (ktlintCheck + detekt + lint)."
     dependsOn("ktlintFormat", "codeQuality")
 }
