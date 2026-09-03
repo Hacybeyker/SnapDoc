@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  A page inside the scanner's corner brackets: the two things the app actually is, and the same
-  framing the viewfinder draws on screen. The brackets carry the amber the app reserves for what the
-  on-device model produced, which is also the only colour that holds up against the blue behind it.
+  A page with the scan light crossing it. The beam overshoots the document on both sides, which is
+  what makes it read as light passing over the page rather than a line printed on it.
 
-  Everything sits inside the 66dp safe circle (corners at 32 and 76 are 31 units from the centre),
-  so no launcher mask can cut a bracket off.
+  The whole mark stays inside the 66dp safe circle: the page corners sit 31 units from the centre and
+  the beam's round caps 31, against a radius of 33, so no launcher mask can clip either.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -13,48 +12,35 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- The page. A4-ish on purpose: it is the shape of the thing being scanned. -->
+    <!-- The document, with the corner turned. Deep navy so it holds against the amber behind it. -->
     <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M46,38h16a3,3 0 0 1 3,3v26a3,3 0 0 1 -3,3h-16a3,3 0 0 1 -3,-3v-26a3,3 0 0 1 3,-3z" />
+        android:fillColor="#FF0E1B3D"
+        android:pathData="M41,28H59L71,40V76A4,4 0 0 1 67,80H41A4,4 0 0 1 37,76V32A4,4 0 0 1 41,28Z" />
+    <path
+        android:fillColor="#FF3A4E86"
+        android:pathData="M59,28L71,40H59Z" />
 
-    <!-- Three lines of text: enough to read as a document at 48dp, where real glyphs would not. -->
+    <!-- Two lines of text, quiet enough that the beam stays the subject. -->
     <path
-        android:pathData="M49.5,46.5L58.5,46.5"
-        android:strokeColor="#FF93A6D4"
-        android:strokeWidth="3"
+        android:pathData="M44,48H62"
+        android:strokeColor="#73FFFFFF"
+        android:strokeWidth="3.4"
         android:strokeLineCap="round" />
     <path
-        android:pathData="M49.5,54L58.5,54"
-        android:strokeColor="#FF93A6D4"
-        android:strokeWidth="3"
-        android:strokeLineCap="round" />
-    <path
-        android:pathData="M49.5,61.5L54,61.5"
-        android:strokeColor="#FF93A6D4"
-        android:strokeWidth="3"
+        android:pathData="M44,64H57"
+        android:strokeColor="#73FFFFFF"
+        android:strokeWidth="3.4"
         android:strokeLineCap="round" />
 
-    <!-- The scanner frame, drawn as four corners rather than a box: a closed rectangle would read as
-         a border, and the whole point of the brackets is that the page is being aimed at. -->
+    <!-- The beam: a soft pass under a hard core, so it reads as light and not as a white bar. -->
     <path
-        android:pathData="M32,46L32,37A5,5 0 0 1 37,32L46,32"
-        android:strokeColor="#FFF2C14E"
-        android:strokeWidth="4.5"
+        android:pathData="M29,56H79"
+        android:strokeColor="#38FFFFFF"
+        android:strokeWidth="12"
         android:strokeLineCap="round" />
     <path
-        android:pathData="M62,32L71,32A5,5 0 0 1 76,37L76,46"
-        android:strokeColor="#FFF2C14E"
-        android:strokeWidth="4.5"
-        android:strokeLineCap="round" />
-    <path
-        android:pathData="M76,62L76,71A5,5 0 0 1 71,76L62,76"
-        android:strokeColor="#FFF2C14E"
-        android:strokeWidth="4.5"
-        android:strokeLineCap="round" />
-    <path
-        android:pathData="M46,76L37,76A5,5 0 0 1 32,71L32,62"
-        android:strokeColor="#FFF2C14E"
-        android:strokeWidth="4.5"
+        android:pathData="M29,56H79"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="5.5"
         android:strokeLineCap="round" />
 </vector>

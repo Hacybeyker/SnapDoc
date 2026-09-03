@@ -172,7 +172,7 @@ the debug APK.
 | Area | Choice |
 |---|---|
 | UI | Jetpack Compose (BOM 2026.08) + Material 3, Navigation 3 |
-| Camera | CameraX 1.6.1 — `camera-compose`, capture and `ImageAnalysis` |
+| Camera | CameraX 1.6.2 — `camera-compose`, capture and `ImageAnalysis` |
 | Scanning | ML Kit Document Scanner (Play services) |
 | OCR | ML Kit Text Recognition v2 |
 | Generative AI | ML Kit GenAI Prompt API over Gemini Nano / AICore |
