@@ -8,6 +8,7 @@
 ## [Unreleased]
 
 ### ✨ Added
+- MIT licence (`LICENSE`), so the terms the project has always been shared under are actually stated
 - Screenshot tests with Roborazzi: 17 goldens covering Home, the archive, the reader and every camera and permission state, committed to the repository and rendered on the JVM so they run in CI without an emulator. They exist because the visual defects this project actually shipped — a scrim stopping short of the screen edge, a scanner frame drawn under the controls, a permission state with no way out — were all invisible to a green test suite. The camera ones render with no surface, which draws the whole chrome and none of the live feed
 - Coverage gate with Kover: 90% of the code that can run on the JVM — domain, data and ViewModels — with the platform boundary excluded rather than counted and argued away. It sits at 93% today
 - SonarCloud analysis in CI, fed by the reports the local gate already produces (Lint, detekt, ktlint and Kover) instead of a second, divergent analysis. The job fails when the Quality Gate does, and is skipped when no `SONAR_TOKEN` is present so a fork still gets a green build
@@ -38,6 +39,9 @@
 - A multi-page import that failed halfway left the pages it had already written on disk, unreachable and taking up internal storage forever — nothing references a page on its own, only a whole document. The import is now all-or-nothing: a failure deletes what that run wrote, and a delete that itself fails no longer replaces the error that caused the rollback
 
 ### ♻️ Changed
+- README rewritten around what the app became rather than what it started as: a capture is not a photo that waits to be processed, it is a document already saved, read and filed. Adds the flow and pipeline diagrams, the architecture and its dependency rule, the key decisions with their reasons, the full command list and the CI, Quality Gate, Build Scan and licence badges
+- `AGENTS.md` kept in step with it: the testing standard now names the screenshot goldens and the coverage gate, and the commands section lists the gates a change has to pass
+- Android Lint's last two actionable warnings are gone: the activity repeated the label the application already declares, and "Turn on on-device AI" reads better as "Enable on-device AI"
 - App icon: the scaffolding robot is replaced by a document with the scan light crossing it, on amber rather than the product blue — a home screen is mostly blue and white icons, and the app you open to photograph something has to be findable in that grid. It is drawn entirely as vectors, including a monochrome layer for themed icons on Android 13+ where the beam and the text lines are cut out of the page instead of drawn on it, since the system supplies a single colour and no tones. The legacy bitmap densities are gone: `minSdk 26` means every launcher gets the adaptive icon
 - README rewritten as the project's own: what the app does, the capture → OCR → AI → archive pipeline as a diagram, the on-device AI requirements together with what happens on a device without them, and an explicit note on what the JVM tests cannot cover and why
 - Android Lint can now fail the build (`abortOnError = true`). The quality gate ran Lint but ignored its verdict, so a Lint error passed CI silently; warnings still do not fail anything
@@ -59,6 +63,8 @@
 - `AGENTS.md`: implementation classes may no longer use the `Impl` suffix; they are named after what backs them
 
 ### 🗑️ Removed
+- The scaffolding's sample instrumented test, which asserted that the package name is the package name, and the four dependencies that existed only for it. `ui-test-manifest` stays, and now says why in a comment: it is not for instrumented tests but for the screenshot goldens, which need its `ComponentActivity` to launch under Robolectric
+- `androidx.room:room-testing` from the version catalog: declared, never used
 - Unused scaffolding colors (`purple_*`, `teal_*`, `black`, `white`) and the now-empty `res/values/colors.xml`
 
 ### 🏗️ Bootstrap

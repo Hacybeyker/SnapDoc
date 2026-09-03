@@ -15,11 +15,11 @@
 | **Architecture** | Vertical Slice Architecture (feature-first) + Clean dependency rule + MVI |
 | **Navigation** | Navigation 3 with type-safe `NavKey` (`@Serializable`) |
 | **DI** | Hilt (one Hilt module per feature, `@Binds` to domain interfaces) |
-| **Local persistence** | Room for structured data + DataStore for preferences (add to the catalog when needed) |
+| **Local persistence** | Room (external-content FTS4 for search) + DataStore for preferences (add to the catalog when needed) |
 | **Concurrency** | Kotlin Coroutines + Flow (`StateFlow` in ViewModels, injected dispatchers) |
-| **Testing** | JUnit + Turbine + Fakes (JVM unit tests) / Screenshot Testing (UI) |
+| **Testing** | JUnit + Turbine + hand-written Fakes (JVM unit tests) · Roborazzi + Robolectric goldens for UI, committed under `app/src/test/screenshots/` |
 | **Principles** | SOLID + Design Patterns (Repository, Factory, Observer, etc.) |
-| **Quality** | ktlint + detekt + Android Lint |
+| **Quality** | ktlint + detekt + Android Lint · Kover coverage gate (90%) · SonarCloud in CI |
 
 ---
 
@@ -28,7 +28,10 @@
 ```
 app/src/main/java/com/hacybeyker/snapdoc/
 ├── core/                  # Shared ONLY if ≥2 features need it (YAGNI)
-│   └── ui/theme/          #   design tokens (Color, Type, Shape, Spacing, Theme)
+│   ├── coroutines/        #   @IoDispatcher qualifier
+│   ├── database/          #   Room database + its Hilt module
+│   ├── document/          #   DocumentInsight — promoted here once two slices needed it
+│   └── ui/                #   design tokens (Color, Type, Shape, Spacing, Theme) + shared components
 ├── navigation/            # NavKeys @Serializable + AppNavHost (Navigation 3)
 └── feature/<name>/        # one Vertical Slice per business capability
     ├── domain/            #   models, usecases, repo interfaces. PURE Kotlin.
@@ -37,8 +40,10 @@ app/src/main/java/com/hacybeyker/snapdoc/
 ```
 
 - **Base package**: `com.hacybeyker.snapdoc`
-- **Build**: `./gradlew assembleDebug` · **Tests**: `./gradlew test`
+- **Build**: `./gradlew assembleDebug` · **Tests**: `./gradlew test` (unit + screenshot, JVM only)
 - **Quality (mandatory before commit)**: `./gradlew formatAndAnalyze` (ktlint + detekt + Android Lint)
+- **Gates a change must pass**: `./gradlew koverVerifyDebug` (coverage) and `./gradlew verifyRoborazziDebug` (goldens); re-baseline an intended visual change with `./gradlew recordRoborazziDebug`
+- **No instrumented tests**: there is no `androidTest` source set. Platform code (CameraX, ML Kit, Room, `PdfDocument`) is verified by hand on a device, and the coverage gate excludes it
 
 ---
 
@@ -94,8 +99,8 @@ To **review implemented code** (code review against this file's standards), foll
 2. **Domain first**: model + usecase + interface, with unit tests.
 3. **Slice data layer**: sources + mapper + repo impl + Hilt module.
 4. **Slice UI layer**: UiState/Intents + ViewModel + Screen/Content; register the NavKey in `AppNavHost`.
-5. **Tests**: unit tests for new logic; screenshot test if there's relevant visual UI.
-6. **Verify**: `./gradlew formatAndAnalyze` and `./gradlew test` passing.
+5. **Tests**: unit tests for new logic; a Roborazzi golden for anything visual, recorded and committed.
+6. **Verify**: `./gradlew formatAndAnalyze test koverVerifyDebug verifyRoborazziDebug` passing.
 7. **Document**: entry in `CHANGELOG.md` under `[Unreleased]` (`Added/Fixed/Changed/Enhancement/Security`).
 
 **Commits — group by functional unit, not by file.** Typically by layer (`domain` / `data` / `ui`) or sub-goal; each commit builds and passes quality checks + tests. One feature/fix at a time.

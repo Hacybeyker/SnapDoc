@@ -23,8 +23,6 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = libs.versions.appVersion.get()
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -114,10 +112,9 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.compose)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
+    // Not for instrumented tests — there are none. It is the debug manifest entry for
+    // ComponentActivity that createComposeRule launches, so removing it fails every golden with
+    // "Unable to resolve activity".
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
