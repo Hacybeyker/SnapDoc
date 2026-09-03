@@ -5,6 +5,7 @@
 [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=com.hacybeyker.snapdoc&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=com.hacybeyker.snapdoc)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=com.hacybeyker.snapdoc&metric=coverage)](https://sonarcloud.io/component_measures?id=com.hacybeyker.snapdoc&metric=coverage)
 [![Build Scan](https://img.shields.io/badge/Gradle-Build_Scan-02303A?logo=gradle&logoColor=white)](https://scans.gradle.com)
+[![Version](https://img.shields.io/badge/version-1.0.0-2B5CE0)](https://github.com/hacybeyker/SnapDoc/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-2B5CE0.svg)](./LICENSE)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.10-7F52FF?logo=kotlin&logoColor=white)
 ![Compose](https://img.shields.io/badge/Jetpack_Compose-BOM_2026.08-4285F4?logo=jetpackcompose&logoColor=white)
