@@ -12,8 +12,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -177,7 +177,7 @@ private fun RecognizedTextPages(
             onClick = onCopyClick,
             modifier = Modifier.fillMaxWidth().padding(bottom = MaterialTheme.spacing.md)
         ) {
-            Icon(imageVector = Icons.Filled.Send, contentDescription = null)
+            Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = null)
             HorizontalSpacer(MaterialTheme.spacing.sm)
             Text(text = stringResource(R.string.document_text_copy))
         }

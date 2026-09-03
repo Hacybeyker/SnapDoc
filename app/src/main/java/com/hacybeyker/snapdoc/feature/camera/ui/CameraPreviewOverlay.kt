@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
@@ -67,7 +67,7 @@ internal fun CameraBackButton(onClick: () -> Unit, modifier: Modifier = Modifier
         modifier = modifier
     ) {
         Icon(
-            imageVector = Icons.Filled.ArrowBack,
+            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
             contentDescription = stringResource(R.string.action_back)
         )
     }

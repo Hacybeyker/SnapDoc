@@ -1,12 +1,16 @@
-# Add project specific R8 rules here.
-# AGP will combine all keep rule files in src/main/keepRules to pass to R8
+# R8 keep rules for the release build. AGP combines every file in src/main/keepRules and passes them
+# to R8, on top of the consumer rules the dependencies ship (kotlinx-serialization, Room, Hilt and
+# ML Kit GenAI all carry their own).
 #
-# For more details, see
-#   https://d.android.com/r/tools/r8/keep-rules
+# Only one thing in this app needs a rule of its own, and it is not obvious:
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Enum names are DATA here, not just identifiers. A document's kind and the engine that read it are
+# stored in Room by name (`insight.kind.name`) and read back by matching that name against
+# DocumentKind.entries. If R8 renames the constants, every row written by an earlier build stops
+# matching: the mapper falls back to Unknown/Rules instead of crashing, which is worse — the archive
+# would quietly lose what it knew about every document already in it.
+-keepclassmembers enum com.hacybeyker.snapdoc.** {
+    <fields>;
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}

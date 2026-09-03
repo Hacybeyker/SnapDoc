@@ -8,7 +8,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.withContext
 
 class RoomDocumentRepository @Inject constructor(
     private val documentDao: DocumentDao,
@@ -23,11 +22,10 @@ class RoomDocumentRepository @Inject constructor(
         .map { entities -> entities.map { it.toStoredDocument() } }
         .flowOn(ioDispatcher)
 
-    override suspend fun save(document: StoredDocument) = withContext(ioDispatcher) {
-        documentDao.save(document.toEntity())
-    }
+    // No withContext here: Room runs its own suspend queries on its query executor, so wrapping them
+    // would only add a dispatcher hop. The Flows above still need flowOn — they are cold, and the
+    // collector decides where they run.
+    override suspend fun save(document: StoredDocument) = documentDao.save(document.toEntity())
 
-    override suspend fun delete(id: Long) = withContext(ioDispatcher) {
-        documentDao.delete(id)
-    }
+    override suspend fun delete(id: Long) = documentDao.delete(id)
 }

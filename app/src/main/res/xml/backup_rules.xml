@@ -1,13 +1,14 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Auto Backup rules for API 30 and below.
+
+    The app's promise is that documents do not leave the phone, and cloud backup is a way for them to
+    leave it: the pages live in filesDir/scans and their recognized text lives in the Room database,
+    so an unrestricted backup would copy someone's receipts and IDs into their Google account. Every
+    domain that can hold document data is excluded; there is nothing else worth backing up.
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <exclude domain="file" path="." />
+    <exclude domain="database" path="." />
+    <exclude domain="sharedpref" path="." />
 </full-backup-content>

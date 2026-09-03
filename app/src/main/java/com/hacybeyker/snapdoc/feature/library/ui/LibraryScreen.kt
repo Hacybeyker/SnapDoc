@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
@@ -70,11 +70,13 @@ fun LibraryScreen(
 
     LibraryContent(
         uiState = uiState,
-        onQueryChange = { viewModel.onIntent(LibraryIntent.QueryChanged(it)) },
-        onDeleteClick = { viewModel.onIntent(LibraryIntent.DeleteDocument(it)) },
-        onShareClick = { viewModel.onIntent(LibraryIntent.ExportDocument(it)) },
-        onOpenDocument = onOpenDocument,
-        onBack = onBack,
+        actions = LibraryActions(
+            onQueryChange = { viewModel.onIntent(LibraryIntent.QueryChanged(it)) },
+            onDeleteClick = { viewModel.onIntent(LibraryIntent.DeleteDocument(it)) },
+            onShareClick = { viewModel.onIntent(LibraryIntent.ExportDocument(it)) },
+            onOpenDocument = onOpenDocument,
+            onBack = onBack
+        ),
         modifier = modifier,
         snackbarHostState = snackbarHostState
     )
@@ -120,14 +122,23 @@ private const val PDF_MIME_TYPE = "application/pdf"
 /** Kept next to the intent that uses it, so the manifest's authority has one obvious counterpart. */
 private const val FILE_PROVIDER_SUFFIX = ".fileprovider"
 
+/**
+ * The five things this screen can ask for. They are grouped because they always travel together —
+ * the screen, its list and every preview pass the same set — and because a composable with eight
+ * parameters is one where the call site stops being readable.
+ */
+internal data class LibraryActions(
+    val onQueryChange: (String) -> Unit = {},
+    val onDeleteClick: (Long) -> Unit = {},
+    val onShareClick: (Long) -> Unit = {},
+    val onOpenDocument: (List<String>) -> Unit = {},
+    val onBack: () -> Unit = {}
+)
+
 @Composable
 internal fun LibraryContent(
     uiState: LibraryUiState,
-    onQueryChange: (String) -> Unit,
-    onDeleteClick: (Long) -> Unit,
-    onShareClick: (Long) -> Unit,
-    onOpenDocument: (List<String>) -> Unit,
-    onBack: () -> Unit,
+    actions: LibraryActions,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
@@ -136,11 +147,11 @@ internal fun LibraryContent(
             AppTopBar(
                 title = stringResource(R.string.library_title),
                 subtitle = stringResource(R.string.library_subtitle),
-                onBack = onBack
+                onBack = actions.onBack
             )
             SearchField(
                 query = uiState.query,
-                onQueryChange = onQueryChange,
+                onQueryChange = actions.onQueryChange,
                 modifier = Modifier.padding(horizontal = MaterialTheme.spacing.md)
             )
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -148,7 +159,7 @@ internal fun LibraryContent(
                     uiState.isLoading -> CircularProgressIndicator()
 
                     uiState.isEmptyArchive -> EmptyState(
-                        icon = Icons.Filled.List,
+                        icon = Icons.AutoMirrored.Filled.List,
                         title = stringResource(R.string.library_empty_title),
                         message = stringResource(R.string.library_empty)
                     )
@@ -158,14 +169,14 @@ internal fun LibraryContent(
                         title = stringResource(R.string.library_no_matches_title),
                         message = stringResource(R.string.library_no_matches),
                         actionLabel = stringResource(R.string.library_clear_search),
-                        onAction = { onQueryChange("") }
+                        onAction = { actions.onQueryChange("") }
                     )
 
                     else -> DocumentList(
                         documents = uiState.documents,
-                        onDeleteClick = onDeleteClick,
-                        onShareClick = onShareClick,
-                        onOpenDocument = onOpenDocument
+                        onDeleteClick = actions.onDeleteClick,
+                        onShareClick = actions.onShareClick,
+                        onOpenDocument = actions.onOpenDocument
                     )
                 }
             }
@@ -313,11 +324,7 @@ private fun LibraryContentPreview() {
     SnapDocTheme {
         LibraryContent(
             uiState = LibraryUiState(documents = previewDocuments, isLoading = false),
-            onQueryChange = {},
-            onDeleteClick = {},
-            onShareClick = {},
-            onOpenDocument = {},
-            onBack = {}
+            actions = LibraryActions()
         )
     }
 }
@@ -328,11 +335,7 @@ private fun LibraryContentEmptyPreview() {
     SnapDocTheme {
         LibraryContent(
             uiState = LibraryUiState(isLoading = false),
-            onQueryChange = {},
-            onDeleteClick = {},
-            onShareClick = {},
-            onOpenDocument = {},
-            onBack = {}
+            actions = LibraryActions()
         )
     }
 }
@@ -343,11 +346,7 @@ private fun LibraryContentNoMatchesPreview() {
     SnapDocTheme {
         LibraryContent(
             uiState = LibraryUiState(query = "plumber", isLoading = false),
-            onQueryChange = {},
-            onDeleteClick = {},
-            onShareClick = {},
-            onOpenDocument = {},
-            onBack = {}
+            actions = LibraryActions()
         )
     }
 }

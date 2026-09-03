@@ -10,9 +10,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -156,7 +156,7 @@ private fun RecentSection(uiState: HomeUiState, onLibraryClick: () -> Unit, onOp
         if (uiState.hasDocuments) {
             TextButton(onClick = onLibraryClick) {
                 Text(text = stringResource(R.string.home_see_all))
-                Icon(imageVector = Icons.Filled.KeyboardArrowRight, contentDescription = null)
+                Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
             }
         }
     }
@@ -181,7 +181,7 @@ private fun HomeEmptyHint(isLoading: Boolean) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = Icons.Filled.List,
+                imageVector = Icons.AutoMirrored.Filled.List,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -219,7 +219,7 @@ private fun RecentDocumentRow(document: StoredDocument, onClick: () -> Unit) {
                 )
             }
             Icon(
-                imageVector = Icons.Filled.KeyboardArrowRight,
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -21,14 +21,20 @@ android {
         applicationId = "com.hacybeyker.snapdoc"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
+        versionCode = 2
         versionName = libs.versions.appVersion.get()
     }
 
     buildTypes {
         release {
+            // R8: shrink, optimize and obfuscate. The one keep rule this app needs lives in
+            // src/main/keepRules/, which AGP hands to R8 along with the ones the dependencies ship.
+            //
+            // SonarQube's S7204 reads `isMinifyEnabled` and cannot see this block, so it reports the
+            // release build as unobfuscated. Both spellings were built and compared: same classes.dex,
+            // same APK and same R8 configuration, byte for byte.
             optimization {
-                enable = false
+                enable = true
             }
         }
     }

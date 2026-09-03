@@ -11,6 +11,36 @@ _Nothing yet._
 
 ---
 
+## [1.0.1] — 2026-09-03
+
+A security release. The first one shipped with the scaffolding's backup rules, which quietly made
+scanned documents eligible for cloud backup — the one thing this app promises never happens. Also
+carries the findings SonarCloud's first analysis turned up, and turns R8 on for release builds.
+
+### 🐛 Fixed
+- Scanned pages and the text read off them were eligible for **cloud backup**. The backup rules were the
+  scaffolding's samples — an empty `full-backup-content` and a commented-out `data-extraction-rules` — so
+  Android's Auto Backup included `filesDir/scans` and the Room database, and someone's receipts and IDs
+  could end up in their Google account. That is the one thing the app promises never happens. Cloud backup
+  now excludes every domain that can hold document data; device-to-device transfer still carries all of it,
+  because moving to a new phone is a handover between two devices the same person is holding
+- Workflow actions are pinned by commit SHA instead of by tag, since a tag can be repointed by whoever owns
+  the action and these workflows hold repository secrets
+- `android:usesCleartextTraffic="false"`: the app has no network layer, and the manifest now says so
+
+### ♻️ Changed
+- **R8 is on for release builds**: code shrinking, resource shrinking, optimization and obfuscation, which takes the APK from 55.7 MB to 45.4 MB and the bundle from 30.7 MB to 25.0 MB. One keep rule of our own was needed, and it is not the obvious kind: enum names are *data* here — a document's kind and the engine that read it are stored in Room by name — so renaming those constants would make every row written by an earlier build stop matching, and the mapper would quietly downgrade the whole archive to `Unknown`/`Rules` instead of crashing. Everything else rides on the consumer rules that kotlinx-serialization, Room, Hilt and ML Kit GenAI already ship
+- The deprecated `Icons.Filled` arrows, lists and send glyphs move to their `Icons.AutoMirrored` equivalents,
+  which is not cosmetic: they now mirror correctly in a right-to-left locale
+- `CameraPermissionRepository`, `DocumentTextRecognizer`, `PdfExporter` and `ScannedPageReader` are `fun
+  interface`s — each has exactly one method, and saying so lets a test double be a lambda where a class adds nothing
+- `RoomDocumentRepository` no longer wraps its suspend DAO calls in `withContext`: Room already runs them on
+  its own query executor, so that was one dispatcher hop for nothing. The cold Flows keep their `flowOn`
+- `LibraryContent` takes a `LibraryActions` holder instead of five separate callbacks — they always travelled
+  together, and eight parameters is where a call site stops being readable
+
+---
+
 ## [1.0.0] — 2026-09-03
 
 First stable release: the whole pipeline, from the viewfinder to a searchable archive and a shareable
@@ -81,5 +111,6 @@ PDF, running entirely on the device.
 
 ---
 
-[Unreleased]: https://github.com/hacybeyker/SnapDoc/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/hacybeyker/SnapDoc/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/hacybeyker/SnapDoc/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/hacybeyker/SnapDoc/releases/tag/v1.0.0

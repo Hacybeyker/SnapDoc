@@ -33,14 +33,7 @@ class LibraryScreenshotTest : ScreenshotTest() {
     )
 
     private fun library(uiState: LibraryUiState) = capture {
-        LibraryContent(
-            uiState = uiState,
-            onQueryChange = {},
-            onDeleteClick = {},
-            onShareClick = {},
-            onOpenDocument = {},
-            onBack = {}
-        )
+        LibraryContent(uiState = uiState, actions = LibraryActions())
     }
 
     @Test

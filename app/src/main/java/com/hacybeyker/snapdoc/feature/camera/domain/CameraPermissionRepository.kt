@@ -1,5 +1,5 @@
 package com.hacybeyker.snapdoc.feature.camera.domain
 
-interface CameraPermissionRepository {
+fun interface CameraPermissionRepository {
     fun hasCameraPermission(): Boolean
 }

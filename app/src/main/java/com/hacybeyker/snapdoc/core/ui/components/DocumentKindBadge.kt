@@ -5,9 +5,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Icon
@@ -61,7 +61,7 @@ fun DocumentKindBadge(kind: DocumentKind, modifier: Modifier = Modifier, size: D
 private val DocumentKind.icon: ImageVector
     get() = when (this) {
         DocumentKind.Receipt -> Icons.Filled.ShoppingCart
-        DocumentKind.Invoice -> Icons.Filled.List
+        DocumentKind.Invoice -> Icons.AutoMirrored.Filled.List
         DocumentKind.IdDocument -> Icons.Filled.Person
         DocumentKind.Note -> Icons.Filled.Create
         DocumentKind.Unknown -> Icons.Filled.Info
