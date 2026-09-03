@@ -7,6 +7,8 @@ plugins {
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
     alias(libs.plugins.room)
+    alias(libs.plugins.kover)
+    alias(libs.plugins.roborazzi)
 }
 
 android {
@@ -20,7 +22,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = libs.versions.appVersion.get()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -38,6 +40,16 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    testOptions {
+        unitTests {
+            // Robolectric inflates the real resources — strings, themes, densities — on the JVM,
+            // which is what lets a screenshot test render the app's actual look and not a stub.
+            isIncludeAndroidResources = true
+            all { test ->
+                test.maxHeapSize = "2g"
+            }
+        }
     }
     lint {
         // The gate is only a gate if it can fail: a lint error breaks the build, warnings do not.
@@ -96,6 +108,12 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.androidx.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -120,6 +138,13 @@ detekt {
 ktlint {
     android.set(true)
     ignoreFailures.set(false)
+    reporters {
+        // PLAIN keeps the violations readable in the console and in the .txt report; CHECKSTYLE is the
+        // only format SonarCloud reads ktlint findings from. Declaring reporters replaces the default,
+        // so leaving PLAIN out would silently make a local failure say only "see the reports".
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.PLAIN)
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.CHECKSTYLE)
+    }
 }
 
 tasks.register("codeQuality") {
@@ -136,4 +161,87 @@ tasks.register("formatAndAnalyze") {
     group = "verification"
     description = "Formats the code (ktlintFormat), then verifies everything (ktlintCheck + detekt + lint)."
     dependsOn("ktlintFormat", "codeQuality")
+}
+
+roborazzi {
+    // The goldens live in the repository, not in build/: verifyRoborazziDebug diffs against them and
+    // recordRoborazziDebug re-baselines after a change that was meant to happen. A screenshot that is
+    // not committed proves nothing on someone else's machine.
+    outputDir.set(file("src/test/screenshots"))
+}
+
+sonar {
+    properties {
+        property("sonar.androidLint.reportPaths", "build/reports/lint-results-debug.xml")
+        property("sonar.kotlin.detekt.reportPaths", "build/reports/detekt/detekt.xml")
+        property(
+            "sonar.kotlin.ktlint.reportPaths",
+            listOf(
+                "build/reports/ktlint/ktlintKotlinScriptCheck/ktlintKotlinScriptCheck.xml",
+                "build/reports/ktlint/ktlintMainSourceSetCheck/ktlintMainSourceSetCheck.xml",
+                "build/reports/ktlint/ktlintTestSourceSetCheck/ktlintTestSourceSetCheck.xml",
+                "build/reports/ktlint/ktlintAndroidTestSourceSetCheck/ktlintAndroidTestSourceSetCheck.xml"
+            ).joinToString(",")
+        )
+        property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/kover/reportDebug.xml")
+        // Coverage is claimed only where it can be earned on the JVM. Everything below talks to
+        // CameraX, Play services, ML Kit, Room or the file system, and is verified on a device.
+        property(
+            "sonar.coverage.exclusions",
+            listOf(
+                "**/ui/**",
+                "**/navigation/**",
+                "**/core/database/**",
+                "**/di/**",
+                "**/*Module.kt",
+                "**/MainActivity.kt",
+                "**/MainApplication.kt",
+                "**/feature/camera/data/**",
+                "**/feature/ocr/data/GeminiNanoDocumentAnalyzer.kt",
+                "**/feature/ocr/data/MlKitDocumentTextRecognizer.kt",
+                "**/feature/library/data/RoomDocumentRepository.kt",
+                "**/feature/library/data/PdfDocumentExporter.kt"
+            ).joinToString(",")
+        )
+    }
+}
+
+kover {
+    reports {
+        filters {
+            includes {
+                classes(
+                    "com.hacybeyker.snapdoc.*.domain.*",
+                    "com.hacybeyker.snapdoc.*.data.*",
+                    "com.hacybeyker.snapdoc.*ViewModel*"
+                )
+            }
+            excludes {
+                classes(
+                    "*_Impl",
+                    "*_Impl$*",
+                    "*_Factory",
+                    "*_Factory$*",
+                    "*Module",
+                    "*Module$*",
+                    "*Module_*",
+                    "*_HiltModules*"
+                )
+                // The platform boundary: none of these can run without a device, so counting them
+                // would only produce a number that has to be argued away.
+                classes(
+                    "com.hacybeyker.snapdoc.feature.camera.data.*",
+                    "com.hacybeyker.snapdoc.feature.ocr.data.GeminiNanoDocumentAnalyzer*",
+                    "com.hacybeyker.snapdoc.feature.ocr.data.MlKitDocumentTextRecognizer*",
+                    "com.hacybeyker.snapdoc.feature.library.data.RoomDocumentRepository*",
+                    "com.hacybeyker.snapdoc.feature.library.data.PdfDocumentExporter*"
+                )
+            }
+        }
+        verify {
+            rule("Line coverage of measured classes (domain, data, ViewModels)") {
+                minBound(90)
+            }
+        }
+    }
 }

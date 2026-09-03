@@ -34,7 +34,13 @@ jobs:
           java-version: 21
 
       - name: Set up Gradle (with cache)
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@90ddb51e90a5fd9ba75f40cf85156b7b41bf76a3 # v6
+        with:
+          # Every CI build publishes a Build Scan: when a job fails here and not on a laptop, the
+          # scan is what shows which task, which inputs and how long, without a rerun.
+          build-scan-publish: true
+          build-scan-terms-of-use-url: "https://gradle.com/help/legal-terms-of-use"
+          build-scan-terms-of-use-agree: "yes"
 
       - name: Quality gate
         run: ./gradlew codeQuality

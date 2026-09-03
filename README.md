@@ -129,16 +129,25 @@ will report the scanner as unavailable — by design, that is a state, not a cra
 ## 🧪 Tests
 
 ```bash
-./gradlew test    # 147 JVM unit tests, no emulator needed
+./gradlew test                 # 164 JVM tests, no emulator needed
+./gradlew koverVerifyDebug     # coverage gate: 90% of domain, data and ViewModels
+./gradlew verifyRoborazziDebug # screenshot gate: 17 committed goldens
+./gradlew recordRoborazziDebug # re-baseline them after a visual change that was meant to happen
 ```
 
 What they cover: every ViewModel, the permission state machine, the live-hint debounce, the OCR and
 insight pipeline including the degradation policy, the model's messy output parsing, FTS query building,
 PDF page geometry, the Room mappings and the archive use cases.
 
-What they deliberately do not cover: the platform plumbing — CameraX binding, the ML Kit clients, `Bitmap`
-and `PdfDocument`. None of it exists on the JVM, so it is verified on a device instead. The boundary is
-explicit rather than papered over with a mocking framework.
+**Screenshot tests** (Roborazzi + Robolectric) cover the half a state assertion cannot see. The visual
+bugs this project actually shipped — a scrim that stopped short of the screen edge, a scanner frame drawn
+underneath the controls, a permission state with no way out — were all invisible to a green test suite.
+The goldens live in `app/src/test/screenshots/` and render on the JVM, so they run in CI with no emulator;
+the camera ones pass `surfaceRequest = null`, which draws all of the chrome and none of the live feed.
+
+What the tests deliberately do not cover: the platform plumbing — CameraX binding, the ML Kit clients,
+`Bitmap` and `PdfDocument`. None of it exists on the JVM, so it is verified on a device instead, and the
+coverage gate excludes it rather than counting lines nobody can execute.
 
 ---
 
@@ -155,6 +164,19 @@ ktlint + detekt + Android Lint are preconfigured. Rules in `.editorconfig`, `con
 ./gradlew codeQuality
 ```
 
+Every gate writes an HTML report under `app/build/reports/`:
+
+| Report | Path |
+|---|---|
+| Unit + screenshot tests | `tests/testDebugUnitTest/index.html` |
+| Screenshot comparison | `roborazzi/debug/index.html` |
+| Coverage | `kover/htmlDebug/index.html` (after `koverHtmlReportDebug`) |
+| detekt | `detekt/detekt.html` |
+| Android Lint | `lint-results-debug.html` |
+
+CI uploads all of them as artifacts on every run, passing or failing — a coverage or screenshot report is
+worth reading on a green build too.
+
 The project includes a **pre-commit hook** that runs `formatAndAnalyze` automatically before every commit.
 Install it once after cloning:
 
@@ -162,8 +184,11 @@ Install it once after cloning:
 chmod +x scripts/setup-quality-hook.sh && ./scripts/setup-quality-hook.sh
 ```
 
-CI runs the same gate on every push and pull request: quality first as a cheap gate, then unit tests and
-the debug APK.
+CI runs the same gate on every push and pull request: quality first as a cheap gate, then the tests, the
+coverage and screenshot gates, and the debug APK. Every CI build publishes a **Build Scan**, so a failure
+that only happens on the runner can be read without reproducing it. **SonarCloud** analysis runs on top,
+fed by the reports the local gate already produces — Lint, detekt, ktlint and Kover — and the job fails
+when its Quality Gate does. It is skipped when `SONAR_TOKEN` is absent, so a fork still gets a green CI.
 
 ---
 
@@ -178,8 +203,9 @@ the debug APK.
 | Generative AI | ML Kit GenAI Prompt API over Gemini Nano / AICore |
 | Data | Room 2.8.4 with an external-content FTS4 index |
 | DI | Hilt |
+| CI | GitHub Actions, Gradle Build Scans, Kover, SonarCloud |
 | Async | Coroutines + Flow |
-| Tests | JUnit4, Turbine, coroutines-test |
+| Tests | JUnit4, Turbine, coroutines-test, Roborazzi + Robolectric for goldens |
 
 ---
 

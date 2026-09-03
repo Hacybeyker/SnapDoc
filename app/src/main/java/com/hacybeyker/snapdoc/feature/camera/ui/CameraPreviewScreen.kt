@@ -85,7 +85,7 @@ fun CameraPreviewScreen(
 }
 
 @Composable
-private fun CameraPreviewContent(
+internal fun CameraPreviewContent(
     uiState: CameraPreviewUiState,
     surfaceRequest: SurfaceRequest?,
     onBackClick: () -> Unit,

@@ -64,7 +64,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HomeContent(
+internal fun HomeContent(
     uiState: HomeUiState,
     onScanClick: () -> Unit,
     onLibraryClick: () -> Unit,

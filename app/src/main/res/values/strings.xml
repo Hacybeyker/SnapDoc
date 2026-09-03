@@ -68,7 +68,7 @@
     <string name="document_insight_no_fields">No details could be picked out of this one.</string>
     <string name="document_insight_by_model">Read by Gemini Nano, on this phone</string>
     <string name="document_insight_by_rules">Read with text rules</string>
-    <string name="document_insight_enable_model">Turn on on-device AI for better results</string>
+    <string name="document_insight_enable_model">Enable on-device AI for better results</string>
     <string name="document_insight_downloading">Downloading the AI model… %1$d MB</string>
     <string name="document_insight_download_failed">Download failed. Tap to retry.</string>
 

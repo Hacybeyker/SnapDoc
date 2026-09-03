@@ -121,7 +121,7 @@ private const val PDF_MIME_TYPE = "application/pdf"
 private const val FILE_PROVIDER_SUFFIX = ".fileprovider"
 
 @Composable
-private fun LibraryContent(
+internal fun LibraryContent(
     uiState: LibraryUiState,
     onQueryChange: (String) -> Unit,
     onDeleteClick: (Long) -> Unit,

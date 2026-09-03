@@ -101,7 +101,7 @@ private fun DocumentTextEffects(viewModel: DocumentTextViewModel, snackbarHostSt
 }
 
 @Composable
-private fun DocumentTextContent(
+internal fun DocumentTextContent(
     uiState: DocumentTextUiState,
     onCopyClick: () -> Unit,
     onRetryClick: () -> Unit,

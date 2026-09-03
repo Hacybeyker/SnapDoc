@@ -83,7 +83,7 @@ fun CameraPermissionScreen(
 }
 
 @Composable
-private fun CameraPermissionContent(
+internal fun CameraPermissionContent(
     uiState: CameraPermissionUiState,
     onRequestPermission: () -> Unit,
     onOpenSettings: () -> Unit,
