@@ -39,7 +39,7 @@ jobs:
           java-version: 21
 
       - name: Set up Gradle (with cache)
-        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
         with:
           # Every CI build publishes a Build Scan: when a job fails here and not on a laptop, the
           # scan is what shows which task, which inputs and how long, without a rerun.
@@ -82,7 +82,7 @@ jobs:
           java-version: 21
 
       - name: Set up Gradle (with cache)
-        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
         with:
           # Every CI build publishes a Build Scan: when a job fails here and not on a laptop, the
           # scan is what shows which task, which inputs and how long, without a rerun.
